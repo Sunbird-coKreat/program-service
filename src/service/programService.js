@@ -750,54 +750,44 @@ function addUserToRegistry(reqObj, callback) {
   }
 
   registryService.addRecord(addUserReq, (err, res) => {
-    if (res) {
-      if (res.status == 200) {
-        if(res.data.params.status=='SUCCESSFUL'){
-             let user = res.data.result 
-             callback(null,reqObj,user)
-        }else{
-          logger.error("Failied to add user")
-          callback("Failed to add user")
-        }
+    if (res && res.status == 200 && 
+          res.data.params.status=='SUCCESSFUL'){
+             
+            reqObj.User['osid'] = res.data.result.User.osid
+             callback(null,reqObj)
+        
       } else {
         logger.error("Encounted some error while adding user")
         callback("Encounted some error while adding user")
       }
-    }
   });
 
 }
 
-function mapUserToOrg(reqObj,userObj, callback) {
+function mapUserToOrg(reqObj, callback) {
 
-  let userOrgObj ={
-    orgId: reqObj.orgId,
-    userId: userObj.User.osid,
-    roles: reqObj.roles
-  }
   let mapReq = {
     body: {
       id: "open-saber.registry.create",
       request: {
-        User_Org:userOrgObj
+        User_Org:{
+          orgId: reqObj.orgId,
+          userId: reqObj.User.osid,
+          roles: reqObj.roles
+        }
       }
     }
   }
 
   registryService.addRecord(mapReq, (err, res) => {
-    if (res) {
-      if (res.status == 200) {
-        if(res.data.params.status=='SUCCESSFUL'){
+      if (res && res.status == 200 &&
+         res.data.params.status=='SUCCESSFUL'){
               
-             callback(null,userObj)
-        }else{
-          logger.error("Failied to map user to org")
-          callback("Failed to map user to org")
-        }
+             callback(null,reqObj.User)
+        
       } else {
         logger.error("Encounted some error while map user to org")
         callback("Encounted some error while map user to org")
-      }
     }
   });
 
