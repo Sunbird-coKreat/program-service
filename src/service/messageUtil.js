@@ -692,6 +692,14 @@ exports.PROGRAM = {
       FAILED_MESSAGE: 'Unable to update the nomination data'
     }
   },
+  USER:{
+    ADD :{
+       MISSING_CODE: 'ERR_ADD_USER_DATA',
+       MISSING_MESSAGE: 'Required fields like firstname, user_id for adding user is missing',
+       FAILED_CODE: 'ERR_ADD_USER_DATA_FAILED',
+       FAILED_MESSAGE: 'Unabled to add user data'
+    }
+  },
   COPY_COLLECTION: {
     COPY: {
       MISSING_CODE: 'ERR_COPYING_COLLECTIONS',

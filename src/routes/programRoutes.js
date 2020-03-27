@@ -63,4 +63,8 @@ module.exports = function (app) {
   app.route(BASE_URL + '/collection/copy')
   .post(requestMiddleware.gzipCompression(), requestMiddleware.createAndValidateRequestBody,
     programService.programCopyCollectionAPI)
+
+  app.route(BASE_URL+ '/users/add')
+  .post(requestMiddleware.gzipCompression(),requestMiddleware.createAndValidateRequestBody,
+    programService.addUserAPI)
 }

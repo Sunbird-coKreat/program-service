@@ -738,7 +738,123 @@ function createUserRecords(user, userOrgMapDetails, orgInfoList, callback) {
 
 }
 
+function addUserToRegistry(reqObj, callback) {
 
+  let addUserReq = {
+    body: {
+      id: "open-saber.registry.create",
+      request: {
+        User: reqObj.User
+      }
+    }
+  }
+
+  registryService.addRecord(addUserReq, (err, res) => {
+    if (res) {
+      if (res.status == 200) {
+        if(res.data.params.status=='SUCCESSFUL'){
+             let user = res.data.result 
+             callback(null,reqObj,user)
+        }else{
+          logger.error("Failied to add user")
+          callback("Failed to add user")
+        }
+      } else {
+        logger.error("Encounted some error while adding user")
+        callback("Encounted some error while adding user")
+      }
+    }
+  });
+
+}
+
+function mapUserToOrg(reqObj,userObj, callback) {
+
+  let userOrgObj ={
+    orgId: reqObj.orgId,
+    userId: userObj.User.osid,
+    roles: reqObj.roles
+  }
+  let mapReq = {
+    body: {
+      id: "open-saber.registry.create",
+      request: {
+        User_Org:userOrgObj
+      }
+    }
+  }
+
+  registryService.addRecord(mapReq, (err, res) => {
+    if (res) {
+      if (res.status == 200) {
+        if(res.data.params.status=='SUCCESSFUL'){
+              
+             callback(null,userObj)
+        }else{
+          logger.error("Failied to map user to org")
+          callback("Failed to map user to org")
+        }
+      } else {
+        logger.error("Encounted some error while map user to org")
+        callback("Encounted some error while map user to org")
+      }
+    }
+  });
+
+}
+
+
+function addUserToOrgRegistry(req, response) {
+  var data = req.body
+  var rspObj = req.rspObj
+  if (!data.request || !data.request.User || !data.request.User.userId || !data.request.User.firstName) {
+      rspObj.errCode = programMessages.USER.ADD.MISSING_CODE
+      rspObj.errMsg = programMessages.USER.ADD.MISSING_MESSAGE
+      rspObj.responseCode = responseCode.CLIENT_ERROR
+      logger.error({
+        msg: 'Error due to missing request or request firstname or request user_id',
+        err: {
+          errCode: rspObj.errCode,
+          errMsg: rspObj.errMsg,
+          responseCode: rspObj.responseCode
+        },
+        additionalInfo: {
+          data
+        }
+      }, req)
+      return response.status(400).send(errorResponse(rspObj))
+   }
+   const insertObj = req.body.request;
+
+   async.waterfall([
+    function (callback) {
+      addUserToRegistry(insertObj, callback)
+    },
+    function (insertObj,user, callback) {
+      mapUserToOrg(insertObj,user, callback);
+    }
+  ], function (err, res) {
+    if (err) {
+      return response.status(400).send(errorResponse({
+        apiId: 'api.user.add',
+        ver: '1.0',
+        msgid: uuid(),
+        responseCode: 'ERR_ADD_USER',
+        result: err.message || err
+      }))
+
+    } else {
+      return response.status(200).send(successResponse({
+        apiId: 'api.user.add',
+        ver: '1.0',
+        msgid: uuid(),
+        responseCode: 'OK',
+        result: res
+      }))
+    }
+  });    
+
+}
 
 
 
@@ -1152,3 +1268,4 @@ module.exports.programGetContentTypesAPI = getProgramContentTypes
 module.exports.getUserDetailsAPI = getUsersDetailsById
 module.exports.healthAPI = health
 module.exports.programCopyCollectionAPI = programCopyCollections;
+module.exports.addUserAPI= addUserToOrgRegistry
