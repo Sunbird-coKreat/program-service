@@ -820,8 +820,8 @@ function addUserToOrgRegistry(req, response) {
     function (callback) {
       addUserToRegistry(insertObj, callback)
     },
-    function (insertObj,user, callback) {
-      mapUserToOrg(insertObj,user, callback);
+    function (insertObj, callback) {
+      mapUserToOrg(insertObj, callback);
     }
   ], function (err, res) {
     if (err) {
