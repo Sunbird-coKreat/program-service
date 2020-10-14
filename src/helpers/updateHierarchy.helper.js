@@ -14,10 +14,10 @@ class HierarchyService {
         data: {
           request: {
             filters: {
-              objectType: "content",
+              objectType: "collection",
               status: ["Draft", "Live"],
               identifier: id,
-              contentType: "Textbook"
+              primaryCategory: "Digital Textbook"
             }
           }
         }
@@ -87,7 +87,15 @@ class HierarchyService {
                 "idealScreenDensity",
                 "depth",
                 "origin",
-                "originData"
+                "originData",
+                "apoc_text",
+                "apoc_num",
+                "apoc_json",
+                "createdOn",
+                "lastUpdatedOn",
+                "lastStatusChangedOn",
+                "lockKey",
+                "variants"
               ])
             }
           }
@@ -167,6 +175,7 @@ class HierarchyService {
         "content.originData"
       ])
     };
+
     additionalMetaData = {
       ...collection.creationResult.result,
       ...additionalMetaData,
@@ -208,31 +217,25 @@ class HierarchyService {
   getFlatHierarchyObj(data, additionalMetaData, children) {
     let instance = this;
     if (data) {
-      if (additionalMetaData.isFirstTime && data.contentType === "TextBook") {
+      if (additionalMetaData.isFirstTime && _.includes(additionalMetaData.projCollectionCategories, data.primaryCategory) && data.visibility === 'Default') {
         data.identifier = additionalMetaData.identifier;
       }
       instance.hierarchy[data.identifier] = {
         name: data.name,
-        contentType: data.contentType,
+        primaryCategory: data.primaryCategory,
         children: _.compact(
           _.map(data.children, function(child) {
-            if (
-              child.mimeType === "application/vnd.ekstep.content-collection" &&
-              (child.contentType === "TextBook" ||
-                child.contentType === "TextBookUnit")
-            ) {
+            if (child.mimeType === "application/vnd.ekstep.content-collection")
+             {
               return child.identifier;
             }
           })
         ),
-        root: data.contentType === "TextBook" ? true : false
+        root: _.includes(additionalMetaData.projCollectionCategories, data.primaryCategory) && data.visibility === 'Default' ? true : false
       };
     }
     _.forEach(data.children, child => {
-      if (
-        child.contentType === "TextBookUnit" ||
-        child.contentType === "TextBook"
-      ) {
+      if (child.mimeType === "application/vnd.ekstep.content-collection") {
         instance.getFlatHierarchyObj(child, additionalMetaData, children);
       }
     });
@@ -243,7 +246,7 @@ class HierarchyService {
     let instance = this;
     let nodeId;
     if (data) {
-      if (additionalMetaData.isFirstTime && data.contentType === "TextBook") {
+      if (additionalMetaData.isFirstTime && _.includes(additionalMetaData.projCollectionCategories, data.primaryCategory) && data.visibility === 'Default') {
         nodeId = additionalMetaData.identifier;
       } else {
         nodeId = data.identifier;
@@ -251,7 +254,7 @@ class HierarchyService {
 
       instance.nodeModified[nodeId] = {
         isNew: true,
-        root: data.contentType === "TextBook" ? true : false,
+        root: _.includes(additionalMetaData.projCollectionCategories, data.primaryCategory) && data.visibility === 'Default' ? true : false,
         metadata: {
           ..._.omit(data, [
             "children",
@@ -270,9 +273,18 @@ class HierarchyService {
             "contentDisposition",
             "os",
             "idealScreenDensity",
-            "depth"
+            "depth",
+            "index",
+            "apoc_text",
+            "apoc_num",
+            "apoc_json",
+            "createdOn",
+            "lastUpdatedOn",
+            "lastStatusChangedOn",
+            "lockKey",
+            "variants"
           ]),
-          ...(data.contentType === "TextBook" && {
+          ...(_.includes(additionalMetaData.projCollectionCategories, data.primaryCategory) && data.visibility === 'Default' && {
             chapterCount : data.children ? data.children.length : 0
           }),
           programId: additionalMetaData.programId,
@@ -284,16 +296,13 @@ class HierarchyService {
           }
         }
       };
-      if(data.contentType !== "TextBook" && instance.nodeModified[nodeId].metadata && instance.nodeModified[nodeId].metadata.audience) {
+      if(!(_.includes(additionalMetaData.projCollectionCategories, data.primaryCategory) && data.visibility === 'Default') && instance.nodeModified[nodeId].metadata && instance.nodeModified[nodeId].metadata.audience) {
         delete instance.nodeModified[nodeId].metadata.audience;
       }
     }
 
     _.forEach(data.children, child => {
-      if (
-        child.contentType === "TextBookUnit" ||
-        child.contentType === "TextBook"
-      ) {
+      if (child.mimeType === "application/vnd.ekstep.content-collection") {
         instance.getFlatNodesModified(child, additionalMetaData, children);
       }
     });

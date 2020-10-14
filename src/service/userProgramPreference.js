@@ -18,6 +18,7 @@ const redisManager = new RedisManager();
 function getPreferences(req, response) {
   var data = req.body;
   var rspObj = req.rspObj;
+  const errCode = programMessages.EXCEPTION_CODE+programMessages.PREFERENCES.READ.EXCEPTION_CODE+programMessages.PREFERENCES.READ.CODE
   rspObj.apiId = 'api.preference.read';
   rspObj.apiVersion = '1.0'
 
@@ -25,8 +26,7 @@ function getPreferences(req, response) {
     rspObj.errCode = programMessages.PREFERENCES.READ.MISSING_CODE
     rspObj.errMsg = programMessages.PREFERENCES.READ.MISSING_MESSAGE
     rspObj.responseCode = responseCode.CLIENT_ERROR;
-    loggerError('Error due to missing request or user_id or program_id',
-      rspObj.errCode, rspObj.errMsg, rspObj.responseCode, null, req)
+    loggerError('',rspObj,errCode);
     return response.status(400).send(errorResponse(rspObj))
   }
 
@@ -237,6 +237,8 @@ function syncCacheToPreferenceTable(userId, programId, cacheObj) {
 function setPreferences(req, response) {
   var data = req.body
   var rspObj = req.rspObj
+  const errCode = programMessages.EXCEPTION_CODE+programMessages.PREFERENCES.CREATE.EXCEPTION_CODE+programMessages.PREFERENCES.CREATE.CODE
+  
   rspObj.apiId = 'api.preference.create';
   rspObj.apiVersion = '1.0';
 
@@ -244,8 +246,7 @@ function setPreferences(req, response) {
     rspObj.errCode = programMessages.PREFERENCES.CREATE.MISSING_CODE
     rspObj.errMsg = programMessages.PREFERENCES.CREATE.MISSING_MESSAGE
     rspObj.responseCode = responseCode.CLIENT_ERROR;
-    loggerError('Error due to missing request or user_id or program_id or preference',
-      rspObj.errCode, rspObj.errMsg, rspObj.responseCode, null, req)
+    loggerError('',rspObj,errCode);
     return response.status(400).send(errorResponse(rspObj))
   }
   // Todo- check if the preferences is json of MSG
@@ -293,6 +294,7 @@ function setPreferences(req, response) {
         } else if (result.res.id) {
           updatePreferencetotable(userId, programId, data.request).then((updateRes) => {
             if (updateRes.error) {
+              const errorCode = programMessages.EXCEPTION_CODE+programMessages.PREFERENCES.UPDATE.EXCEPTION_CODE+programMessages.PREFERENCES.UPDATE.CODE
               rspObj.errMsg = programMessages.PREFERENCES.UPDATE.FAILED_MESSAGE
               rspObj.responseCode = programMessages.PREFERENCES.UPDATE.FAILED_CODE;
               rspObj.result = updateRes.res;
@@ -323,8 +325,16 @@ function diffinHours(checkDateTime) {
   return duration.asHours();
 }
 
-function loggerError(msg, errCode, errMsg, responseCode, error, req) {
-  logger.error({ msg: msg, err: { errCode, errMsg, responseCode }, additionalInfo: { error } }, req)
+function loggerError(errmsg,data,errCode) {
+  var errObj = {}
+  errObj.eid = 'Error'
+  errObj.edata = {
+    err : errCode,
+    errtype : errmsg || data.errMsg,
+    requestid : data.msgId || uuid(),
+    stacktrace : _.truncate(JSON.stringify(data), { 'length': stackTrace_MaxLimit})
+  }
+  logger.error(errObj)
 }
 
 function successResponse(data) {

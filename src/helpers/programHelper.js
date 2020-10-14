@@ -1,5 +1,6 @@
 const { forkJoin } = require("rxjs");
 const { from  } = require("rxjs");
+const { of  } = require("rxjs");
 const _ = require("lodash");
 const envVariables = require("../envVariables");
 const axios = require("axios");
@@ -12,7 +13,11 @@ const programMessages = messageUtils.PROGRAM;
 const logger = require('sb_logger_util_v2');
 const { retry } = require("rxjs/operators");
 const HierarchyService = require('./updateHierarchy.helper');
-const hierarchyService = new HierarchyService()
+const RegistryService = require('../service/registryService');
+const hierarchyService = new HierarchyService();
+const registryService = new RegistryService();
+const SbCacheManager = require('sb_cache_manager');
+const cacheManager = new SbCacheManager({ttl: envVariables.CACHE_TTL});
 
 class ProgramServiceHelper {
   searchContent(programId, sampleContentCheck, reqHeaders) {
@@ -44,7 +49,8 @@ class ProgramServiceHelper {
                   'organisationId',
                   'collectionId',
                   'prevStatus',
-                  'contentType'
+                  'contentType',
+                  'primaryCategory'
           ],
           limit: 10000
         }
@@ -128,15 +134,16 @@ class ProgramServiceHelper {
     return axios(option);
   }
 
-  getCollectionWithProgramId(program_id, req) {
+  async getCollectionWithProgramId(program_id, req) {
+    const program = await this.getProgramDetails(program_id);
     const queryFilter = {
        filters: {
          programId: program_id,
-         objectType: 'content',
+         objectType: 'collection',
          status: ['Draft'],
-         contentType: 'Textbook'
+         primaryCategory: program.dataValues.target_collection_category
        },
-       fields: ['name', 'medium', 'gradeLevel', 'subject', 'chapterCount', 'acceptedContents', 'rejectedContents', 'openForContribution', 'chapterCountForContribution', 'mvcContributions'],
+       fields: ['name', 'medium', 'gradeLevel', 'subject', 'primaryCategory', 'chapterCount', 'acceptedContents', 'rejectedContents', 'openForContribution', 'chapterCountForContribution', 'mvcContributions'],
        limit: 1000
      };
     return this.searchWithProgramId(queryFilter, req);
@@ -259,7 +266,7 @@ class ProgramServiceHelper {
         tableData = _.map(openForContributionCollections, (collection) => {
         const result = {};
         // sequence of columns in tableData
-        result['Textbook Name'] = collection.name || '';
+        result[`${collection.primaryCategory} Name`] = collection.name || '';
         result['Medium'] = collection.medium || '';
         result['Class'] = collection.gradeLevel && collection.gradeLevel.length ? collection.gradeLevel.join(', ') : '';
         result['Subject'] = collection.subject || '';
@@ -345,11 +352,32 @@ class ProgramServiceHelper {
   }
 
   getProgramDetails(program_id) {
-    return model.program.findOne({
-      where: {
-        program_id: program_id
-      }
-    })
+    return new Promise((resolve, reject) => {
+      cacheManager.get(`program_obj_${program_id}`, (err, cacheData) => {
+        cacheData = null;
+        if (err || !cacheData) {
+          model.program.findOne({
+            where: {
+              program_id: program_id
+            }
+          }).then(res => {
+            cacheManager.set({ key: `program_obj_${program_id}`, value: res }, function (err, cacheCSVData) {
+              if (err) {
+                logger.error({msg: 'Error - caching', err, additionalInfo: {programObj: res}}, {})
+              } else {
+                logger.debug({msg: 'Caching program obj  - done', additionalInfo: {programObj: res}}, {})
+              }
+            });
+
+            return resolve(res);
+          }).catch(function (err) {
+            return reject({});
+          });
+        } else {
+          return resolve(cacheData);
+        }
+      });
+    });
   }
 
   hierarchyRequest(req, collectionId) {
@@ -423,7 +451,7 @@ class ProgramServiceHelper {
 
   collectionLevelCount(data) {
     const self = this;
-    if (data.contentType === 'TextBook') {
+    if ((data.primaryCategory === 'Digital Textbook' || data.primaryCategory === 'Course' || data.primaryCategory === 'Content Playlist') && data.visibility === 'Default') {
       this.collectionData['name'] = data.name;
       this.collectionData['identifier'] = data.identifier;
       this.collectionData['grade'] = _.isArray(data.gradeLevel) ? data.gradeLevel.join(", ") : data.gradeLevel || '';
@@ -432,7 +460,8 @@ class ProgramServiceHelper {
       this.collectionData['count'] = this.acceptedContents.length;
       this.collectionData['chapter'] = [];
       this.recursive = true;
-    } else if (data.contentType === 'TextBookUnit') {
+    } else if (data.mimeType === 'application/vnd.ekstep.content-collection'
+      && data.visibility === 'Parent') {
       if (data.parent === this.collectionData['identifier']) {
         const chapterObj = {
           name: data.name,
@@ -463,14 +492,14 @@ class ProgramServiceHelper {
 
   chapterLevelCount(object) {
     const self = this;
-    if (object.contentType !== 'TextBook'
-      && object.contentType !== 'TextBookUnit'
+    if (object.mimeType !== 'application/vnd.ekstep.content-collection'
+      && object.visibility !== 'Parent'
       && _.includes(this.acceptedContents, object.identifier)) {
-          this.contentData.push({name: object.contentType});
+          this.contentData.push({name: object.primaryCategory});
     }
 
-    if (object.contentType !== 'TextBook'
-        && object.contentType !== 'TextBookUnit'
+    if (object.mimeType !== 'application/vnd.ekstep.content-collection'
+        && object.visibility !== 'Parent'
         && (object.status === 'Live' || (object.status === 'Draft' && object.prevStatus === 'Live'))) {
           this.contentsContributed.push(object.identifier);
           if (_.includes(this.acceptedContents, object.identifier)
@@ -496,7 +525,7 @@ class ProgramServiceHelper {
               final['Medium'] = collection.medium;
               final['Grade'] = collection.grade;
               final['Subject'] = collection.subject;
-              final['Textbook Name'] = collection.name;
+              final[`${collection.primaryCategory} Name`] = collection.name;
               final['Total Number of Chapters'] = collection.chapter ? collection.chapter.length : 0;
               final['Total Contents Contributed'] = collection.contributionsReceived ? collection.contributionsReceived : 0;
               final['Total Contents Reviewed'] = collection.totalContentsReviewed ? collection.totalContentsReviewed : 0;
@@ -514,9 +543,9 @@ class ProgramServiceHelper {
           }
         });
         return resolve(overalData);
-      }catch (err) {
-        reject('programServiceException: error in preparing textbookLevelContentMetrics');
-      }
+        }catch (err) {
+          reject('programServiceException: error in preparing textbookLevelContentMetrics');
+        }
       }, err => {
         reject('programServiceException: error in fetching contentTypes');
       });
@@ -536,7 +565,7 @@ class ProgramServiceHelper {
                   final['Medium'] = collection.medium;
                   final['Grade'] = collection.grade;
                   final['Subject'] = collection.subject;
-                  final['Textbook Name'] = collection.name;
+                  final[`${collection.primaryCategory} Name`] = collection.name;
                   final['Chapter Name'] = unit.name;
                   final['Total Contents Contributed'] = unit.contentsContributed || 0;
                   final['Total Contents Reviewed'] = unit.contentsReviewed || 0;
@@ -586,7 +615,8 @@ class ProgramServiceHelper {
       programId: _.get(data, 'program_id'),
       allowedContentTypes: _.get(data, 'content_types'),
       channel: channel,
-      openForContribution: false
+      openForContribution: false,
+      projCollectionCategories: _.get(data, 'target_collection_category'),
     };
 
     hierarchyService.filterExistingTextbooks(collectionIds, reqHeaders)
@@ -698,9 +728,10 @@ class ProgramServiceHelper {
                           cb(null, rspObj);
                         }, error => {
                           console.log('Error updating hierarchy for collections')
+                          console.log(_.get(error, 'response.data.result.messages'))
                           console.log(error)
                           errObj.errCode = _.get(error.response, 'data.params.err') || programMessages.COPY_COLLECTION.BULK_UPDATE_HIERARCHY.FAILED_CODE;
-                          errObj.errMsg = _.get(error.response, 'data.params.errmsg') || programMessages.COPY_COLLECTION.BULK_UPDATE_HIERARCHY.FAILED_MESSAGE;
+                          errObj.errMsg = _.get(error, 'response.data.result.messages') || _.get(error.response, 'data.params.errmsg') || programMessages.COPY_COLLECTION.BULK_UPDATE_HIERARCHY.FAILED_MESSAGE;
                           errObj.responseCode = _.get(error.response, 'data.responseCode') || responseCode.SERVER_ERROR
                           errObj.loggerMsg = 'Error updating hierarchy for collections';
                           cb(errObj, null);
@@ -799,6 +830,80 @@ class ProgramServiceHelper {
     }
 
     return from(axios(req));
+  }
+
+  /**
+   * Update the user profile with medium, subject and gradeLevel
+   *
+   * @param integer program_id  Program id
+   * @param integer user_id     User id
+   */
+  async onAfterAddNomination(program_id, user_id) {
+    const program = await this.getProgramDetails(program_id);
+    const value = {};
+    value['body'] = {
+      "id": "open-saber.registry.search",
+      "request": {
+          "entityType":["User"],
+          "filters": {
+            "userId": {
+                "contains": user_id
+            }
+        }
+      }
+    };
+
+    registryService.searchRecord(value, (err, res) => {
+      if (!err && res) {
+        const user = _.first(res.data.result.User);
+        const updateRequestBody = {};
+        updateRequestBody['body'] = {
+          "id": "open-saber.registry.update",
+          "ver": "1.0",
+          "request": {
+            "User": {
+              "osid": user.osid,
+              "medium": _.union(user.medium, program.config.medium),
+              "gradeLevel": _.union(user.gradeLevel, program.config.gradeLevel),
+              "subject": _.union(user.subject, program.config.subject)
+              }
+          }
+        };
+        registryService.updateRecord(updateRequestBody, (error, response) => {
+          if (!error && response) {
+            return response;
+          } else {
+            return error;
+          }
+        });
+      }
+    });
+  }
+
+  /**
+   * Sort the program based on medium, subject, gradeLevel and program created date
+   *
+   * @param array  programs  List of programs
+   * @param object sort      Sort by options
+   */
+  sortPrograms(programs, sort) {
+    _.map(programs, program => {
+      const medium = _.get(program, 'medium') || _.get(program, 'program.dataValues.medium') || null;
+      const gradeLevel = _.get(program, 'gradeLevel') || _.get(program, 'program.dataValues.gradeLevel') || null;
+      const subject = _.get(program, 'subject') || _.get(program, 'program.dataValues.subject') || null;
+
+      program.matchCount =  _.intersection(JSON.parse(medium), sort.medium).length
+        + _.intersection(JSON.parse(gradeLevel), sort.gradeLevel).length
+        + _.intersection(JSON.parse(subject), sort.subject).length;
+      return program;
+    });
+
+    /**
+     * Sort by descending order
+     * 1. Sum of matching medium, subject and gradeLevel and
+     * 2. program created date
+     */
+    return _(programs).chain().sortBy((prg) => prg.createdon).sortBy((prg) => prg.matchCount).values().reverse();
   }
 }
 

@@ -22,6 +22,9 @@ module.exports = function(sequelize, DataTypes) {
     content_types: {
       type: DataTypes.ARRAY(DataTypes.TEXT)
     },
+    target_collection_category: {
+      type: DataTypes.ARRAY(DataTypes.TEXT)
+    },
     startdate: {
       type: DataTypes.DATE
     },

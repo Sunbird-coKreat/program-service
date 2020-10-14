@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node app.js",
     "test": "mocha 'test/**/*.js'",
-    "test-with-coverage": "nyc mocha test/**/*.js --exit --timeout 20000"
+    "test-with-coverage": "nyc --reporter=lcov --reporter=text-lcov mocha test/**/*.js --exit --timeout 20000"
   },
   "dependencies": {
     "@project-sunbird/telemetry-sdk": "0.0.24",
@@ -13,6 +13,7 @@
     "better-config": "^1.2.3",
     "bluebird": "^3.7.2",
     "cassandra-driver": "^4.4.0",
+    "chai-sorted": "^0.2.0",
     "compression": "^1.7.4",
     "cookie-parser": "~1.4.4",
     "dateformat": "^3.0.3",

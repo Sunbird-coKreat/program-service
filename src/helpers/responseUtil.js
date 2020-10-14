@@ -1,5 +1,6 @@
 const logger = require('sb_logger_util_v2');
 const uuid = require("uuid/v1");
+const stackTrace_MaxLimit = 500;
 
 const successResponse = (data) => {
   var response = {}
@@ -33,9 +34,16 @@ const getParams = (msgId, status, errCode, msg) => {
   return params
 }
 
-
-const loggerError = (msg, errCode, errMsg, responseCode, error, req) => {
-  logger.error({ msg: msg, err: { errCode, errMsg, responseCode }, additionalInfo: { error } }, req)
+const loggerError = (data,errCode) => {
+  var errObj = {}
+  errObj.eid = 'Error'
+  errObj.edata = {
+    err : errCode,
+    errtype : data.errMsg,
+    requestid : data.msgId || uuid(),
+    stacktrace : _.truncate(JSON.stringify(data), { 'length': stackTrace_MaxLimit})
+  }
+  logger.error(errObj)
 }
 
 module.exports = {
