@@ -619,7 +619,7 @@ class ProgramServiceHelper {
       projCollectionCategories: _.get(data, 'target_collection_category'),
     };
 
-    hierarchyService.filterExistingTextbooks(collectionIds, reqHeaders)
+    hierarchyService.filterExistingTextbooks(collectionIds, additionalMetaData.programId, reqHeaders)
       .subscribe(
         (resData) => {
           const consolidatedResult = _.map(resData, r => {

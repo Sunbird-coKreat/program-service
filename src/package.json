@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node app.js",
     "test": "mocha 'test/**/*.js'",
-    "test-with-coverage": "nyc --reporter=lcov --reporter=text-lcov mocha test/**/*.js --exit --timeout 20000"
+    "test-with-coverage": "nyc mocha test/**/*.js --exit --timeout 20000"
   },
   "dependencies": {
     "@project-sunbird/telemetry-sdk": "0.0.24",

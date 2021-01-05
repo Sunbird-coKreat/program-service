@@ -92,7 +92,6 @@ describe('Program Service', () => {
 
   _.forEach(dummyData.mandatoryFieldsProgramCreate, field => {
     // eslint-disable-next-line no-undef
-    /*
     it(`it should not create a program if ${field} is not sent`, (done) => {
       const reqData = JSON.stringify(programData)
       const program = { request: JSON.parse(reqData) }
@@ -106,7 +105,7 @@ describe('Program Service', () => {
           expect(res.status).to.equal(400)
           done()
         })
-    })*/
+    })
   })
 
   // eslint-disable-next-line no-undef
@@ -611,7 +610,6 @@ describe('Program Service', () => {
   })
 
   // eslint-disable-next-line no-undef
-  /*
   it('it should get contentTypes', (done) => {
     chai.request(app)
       .get(BASE_URL + '/contenttypes/list')
@@ -626,10 +624,9 @@ describe('Program Service', () => {
         }
         done()
       })
-  })*/
+  })
 
   // eslint-disable-next-line no-undef
-  /*
   it('it should search configuration with key', (done) => {
     chai.request(app)
       .post(BASE_URL + '/configuration/search')
@@ -642,7 +639,7 @@ describe('Program Service', () => {
         done()
       })
   })
-  */
+
   // eslint-disable-next-line no-undef
   it('it should not get program details', (done) => {
     const programDetails = {request: {filters: {program_id: [programId2]}} }
@@ -676,7 +673,6 @@ describe('Program Service', () => {
   })
 
   // eslint-disable-next-line no-undef
-  /*
   it('it should get program details', (done) => {
     const programDetails = {request: {filters: {program_id: [programId2]}} }
     dummyData.getCollectionWithProgramId.request.filters.programId = programId2;
@@ -796,7 +792,7 @@ describe('Program Service', () => {
         done()
       })
   });
-  */
+
   // eslint-disable-next-line no-undef
   it('it should not download nomination list details', (done) => {
     const programDetails = {request: {filters: {program_id: programId, program_name: 'Test case', status: 'Pending'}} }
@@ -817,7 +813,6 @@ describe('Program Service', () => {
       })
   })
 
-  /*
   // eslint-disable-next-line no-undef
   it('it should download nomination list details', (done) => {
     const programDetails = {request: {filters: {program_id: programId, program_name: 'Test case', status: 'Pending'}} }
@@ -865,7 +860,7 @@ describe('Program Service', () => {
         done()
       })
   })
-  */
+
   it('Sort the program by medium, gradeLevel and subject', (done) => {
     chai.request(app)
       .post(BASE_URL + '/list')
