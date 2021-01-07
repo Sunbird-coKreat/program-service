@@ -15,13 +15,13 @@ const successResponse = (data) => {
   return response
 }
 
-const errorResponse = (data) => {
+const errorResponse = (data,errCode) => {
   var response = {}
   response.id = data.apiId
   response.ver = data.apiVersion
   response.ts = new Date()
   response.params = getParams(data.msgId, 'failed', data.errCode, data.errMsg)
-  response.responseCode = data.responseCode
+  response.responseCode = errCode+'_'+data.responseCode
   response.result = data.result
   return response
 }

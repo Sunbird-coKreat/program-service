@@ -178,7 +178,7 @@ const searchForUpdates = async (req, response) => {
     rspObj.responseCode = responseCode.SERVER_ERROR;
     loggerError(rspObj,errCode);
     loggerService.exitLog({responseCode: rspObj.responseCode}, entryExitlog);
-    return response.status(500).send(errorResponse(rspObj));
+    return response.status(500).send(errorResponse(rspObj,errCode));
   }
 }
 
