@@ -311,7 +311,7 @@ function unlistPublishProgram(req, response) {
     rspObj.errCode = programMessages.PUBLISH.MISSING_CODE
     rspObj.errMsg = programMessages.PUBLISH.MISSING_MESSAGE
     rspObj.responseCode = responseCode.CLIENT_ERROR
-    loggerService.exitLog(rspObj.responseCode, logObject);
+    loggerService.exitLog({ responseCode: rspObj.responseCode}, logObject);
     loggerError('',rspObj,errCode+contentMessages.UNLISTED_PUBLISH.CODE1);
     return response.status(400).send(errorResponse(rspObj,errCode+contentMessages.UNLISTED_PUBLISH.CODE1))
   }
@@ -1524,7 +1524,7 @@ function getNominationsList(req, response) {
           }))
         }, (error) => {
           console.log(error)
-          loggerService.exitLog(rspObj.responseCode, logObject);
+          loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
           loggerError('',rspObj,errCode+programMessages.NOMINATION.LIST.CODE3);
           return response.status(400).send(errorResponse(rspObj,errCode+programMessages.NOMINATION.LIST.CODE3));
         });

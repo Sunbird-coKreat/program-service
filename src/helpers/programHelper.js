@@ -18,6 +18,7 @@ const hierarchyService = new HierarchyService();
 const registryService = new RegistryService();
 const SbCacheManager = require('sb_cache_manager');
 const cacheManager = new SbCacheManager({ttl: envVariables.CACHE_TTL});
+const loggerService = require('../service/loggerService');
 
 class ProgramServiceHelper {
   searchContent(programId, sampleContentCheck, reqHeaders) {
@@ -591,7 +592,12 @@ class ProgramServiceHelper {
       });
   }
 
-  copyCollections(data, channel, reqHeaders, cb) {
+  copyCollections(data, channel, reqHeaders, cb) { //
+    const logObject = {
+      traceId : reqHeaders['x-request-id'] || '',
+      message : programMessages.PUBLISH.INFO
+    }
+   loggerService.entryLog({programId: _.get(data, 'program_id') || ''}, logObject);
     const rspObj = {};
     const errObj = {
       'loggerMsg': null,
@@ -606,6 +612,7 @@ class ProgramServiceHelper {
       errObj.responseCode = responseCode.CLIENT_ERROR;
       errObj.loggerMsg = 'Error due to missing request or program_id or request collections or request allowed_content_types or channel'
       cb(errObj, null);
+      loggerService.exitLog({responseCode: errObj.responseCode}, logObject);
       return false;
     }
 
@@ -657,6 +664,7 @@ class ProgramServiceHelper {
                       rspObj.result = updateResultData;
                       rspObj.responseCode = 'OK'
                       cb(null, rspObj);
+                      loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
                       return true;
                     }, error => {
                       errObj.errCode = programMessages.COPY_COLLECTION.BULK_UPDATE_HIERARCHY.FAILED_CODE;
@@ -665,6 +673,7 @@ class ProgramServiceHelper {
                       console.log('Error updating hierarchy for collections', error)
                       errObj.loggerMsg = 'Error updating hierarchy for collections';
                       cb (errObj, null);
+                      loggerService.exitLog({responseCode: errObj.responseCode}, logObject);
                       return false;
                     })
                 }, error => {
@@ -673,6 +682,7 @@ class ProgramServiceHelper {
                   errObj.responseCode = responseCode.SERVER_ERROR
                   errObj.loggerMsg = 'Error fetching hierarchy for collections';
                   console.log('Error fetching hierarchy for collections', error);
+                  loggerService.exitLog({responseCode: errObj.responseCode}, logObject);
                   cb (errObj, null);
                   return false;
                 })
@@ -725,6 +735,7 @@ class ProgramServiceHelper {
 
                           rspObj.result = updateResultData;
                           rspObj.responseCode = 'OK';
+                          loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
                           cb(null, rspObj);
                         }, error => {
                           console.log('Error updating hierarchy for collections')
@@ -734,6 +745,7 @@ class ProgramServiceHelper {
                           errObj.errMsg = _.get(error, 'response.data.result.messages') || _.get(error.response, 'data.params.errmsg') || programMessages.COPY_COLLECTION.BULK_UPDATE_HIERARCHY.FAILED_MESSAGE;
                           errObj.responseCode = _.get(error.response, 'data.responseCode') || responseCode.SERVER_ERROR
                           errObj.loggerMsg = 'Error updating hierarchy for collections';
+                          loggerService.exitLog({responseCode: errObj.responseCode}, logObject);
                           cb(errObj, null);
                         })
                     }, error => {
@@ -743,6 +755,7 @@ class ProgramServiceHelper {
                       errObj.errMsg = _.get(error.response, 'data.params.errmsg') || programMessages.COPY_COLLECTION.CREATE_COLLECTION.FAILED_MESSAGE;
                       errObj.responseCode = _.get(error.response, 'data.responseCode') || responseCode.SERVER_ERROR
                       errObj.loggerMsg = 'Error creating collection';
+                      loggerService.exitLog({responseCode: errObj.responseCode}, logObject);
                       cb(errObj, null);
                     })
                 }, (error) => {
@@ -751,6 +764,7 @@ class ProgramServiceHelper {
                   errObj.responseCode = responseCode.SERVER_ERROR;
                   errObj.loggerMsg = 'Error fetching hierarchy for collections';
                   console.log('Error fetching hierarchy for collections', error);
+                  loggerService.exitLog({responseCode: errObj.responseCode}, logObject);
                   cb (errObj, null);
                 })
           }
@@ -762,6 +776,7 @@ class ProgramServiceHelper {
           errObj.responseCode = _.get(error, 'response.statusText') || responseCode.SERVER_ERROR
           errObj.loggerMsg = 'Error searching for collections';
           console.log('Error searching for collections', error)
+          loggerService.exitLog({responseCode: errObj.responseCode}, logObject);
           cb (errObj, null);
           return false;
         }
