@@ -897,7 +897,7 @@ exports.CONFIGURATION = {
     INFO: 'Update configuration'
   },
   SEARCH: {
-    EXCEPTION_CODE: 'CNFSE',
+    EXCEPTION_CODE: 'PRCSE',
     MISSING_CODE: 'ERR_SEARCHING_CONFIGURATION',
     MISSING_MESSAGE: 'Required fields like key, status to search for configuration are missing',
     INFO: 'Get configuration details by key'
@@ -921,7 +921,7 @@ exports.EXTERNAL_URL_META = {
 
 exports.BULK_JOB_REQUEST = {
   CREATE: {
-    EXCEPTION_CODE: 'BLJCRT',
+    EXCEPTION_CODE: 'BLJCRTT',
     MISSING_CODE: 'ERR_CREATE_BULK_JOB',
     MISSING_MESSAGE: 'Required fields to create bulk job request are missing',
     FAILED_CODE: 'ERR_CREATE_BULK_JOB_REQUEST_FAILED',
@@ -929,13 +929,13 @@ exports.BULK_JOB_REQUEST = {
     INFO: 'Create bulk Job'
   },
   READ: {
-    EXCEPTION_CODE: 'BLJRED',
+    EXCEPTION_CODE: 'BLJPRED',
     FAILED_CODE: 'ERROR_READING_BULK_JOB_REQUEST',
     FAILED_MESSAGE: 'Error fetching bulk job request for the requested process_id',
     INFO: 'Read bulk Job'
   },
   UPDATE: {
-    EXCEPTION_CODE: 'BLJUPD',
+    EXCEPTION_CODE: 'BLJPUPD',
     MISSING_CODE: 'ERR_UPDATING_BULK_JOB_REQUEST',
     MISSING_MESSAGE: 'Required fields like process_id to update bulk job request are missing',
     FAILED_CODE: 'ERR_UPDATE_BULK_JOB_REQUEST_FAILED',
@@ -947,7 +947,7 @@ exports.BULK_JOB_REQUEST = {
     INFO: 'Update bulk Job'
   },
   SEARCH: {
-    EXCEPTION_CODE: 'BLJSE',
+    EXCEPTION_CODE: 'BLJPSEA',
     MISSING_CODE: 'ERR_SEARCHING_BULK_JOB_REQUEST',
     MISSING_MESSAGE: 'Required fields like filters are missing',
     FAILED_CODE: 'ERROR_SEARCHING_BULK_JOB_REQUEST',
@@ -959,7 +959,7 @@ exports.BULK_JOB_REQUEST = {
 
 exports.PROGRAM_FEED = {
   SEARCH: {
-    EXCEPTION_CODE: 'PFDSE',
+    EXCEPTION_CODE: 'FDSE',
     MISSING_CODE: 'ERR_SEARCHING_PROGRAM_FEED',
     MISSING_MESSAGE: 'Required fields like <> are missing',
     FAILED_CODE: 'ERROR_SEARCHING_PROGRAM_FEED',
