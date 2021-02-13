@@ -47,9 +47,6 @@ var fonts = {
 
 var printer = new PdfPrinter(fonts);
 var fs = require("fs");
-const { language } = require("googleapis/build/src/apis/language");
-
-const file_header = ";headers=filename%3D";
 
 var options = {
   // ...
