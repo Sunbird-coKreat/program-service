@@ -44,7 +44,9 @@
     "sb_telemetry_util": "file:libs/sb_telemetry_util",
     "sequelize": "^5.21.5",
     "underscore": "^1.9.2",
-    "uuid": "^3.2.1"
+    "uuid": "^3.2.1",
+    "fetch": "^1.1.0",
+    "pdfmake": "^0.1.70"
   },
   "devDependencies": {
     "chai": "^4.2.0",
