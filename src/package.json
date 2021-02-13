@@ -46,7 +46,8 @@
     "underscore": "^1.9.2",
     "uuid": "^3.2.1",
     "fetch": "^1.1.0",
-    "pdfmake": "^0.1.70"
+    "pdfmake": "^0.1.70",
+    "node-fetch": "2.6.1"
   },
   "devDependencies": {
     "chai": "^4.2.0",
