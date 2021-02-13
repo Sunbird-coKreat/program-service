@@ -1,18 +1,18 @@
 const fetch = require("node-fetch");
+const envVariables = require("../../envVariables");
 
 const getQuestionForSection = async (id) => {
-  const url = `https://dock.sunbirded.org/action/content/v3/hierarchy/${id}?mode=edit`;
+  const url = `${envVariables.baseURL}/action/content/v3/hierarchy/${id}?mode=edit`;
   return fetch(url)
     .then((r) => r.json())
     .then((r) => {
-      //console.log(r);
       const itemset = r.result.content.itemSets[0];
-      const urlItemset = `https://dock.sunbirded.org/action/itemset/v3/read/${itemset.identifier}`;
+      const urlItemset = `${envVariables.baseURL}/action/itemset/v3/read/${itemset.identifier}`;
       return fetch(urlItemset)
         .then((r) => r.json())
         .then((r) => {
           const item = r.result.itemset.items[0];
-          const urlItem = `https://dock.sunbirded.org/action/assessment/v3/items/read/${item.identifier}`;
+          const urlItem = `${envVariables.baseURL}/action/assessment/v3/items/read/${item.identifier}`;
           console.log(urlItem);
           return fetch(urlItem)
             .then((r) => r.json())
@@ -25,7 +25,7 @@ const getQuestionForSection = async (id) => {
 };
 
 const getData = async (id) => {
-  const url = `https://dock.sunbirded.org/action/content/v3/hierarchy/${id}?mode=edit`;
+  const url = `${envVariables.baseURL}/action/content/v3/hierarchy/${id}?mode=edit`;
   return fetch(url)
     .then((r) => r.json())
     .then((r) => {

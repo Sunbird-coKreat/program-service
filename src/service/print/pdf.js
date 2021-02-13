@@ -118,7 +118,6 @@ const buildPDFWithCallback = (id, callback) => {
 
             questionPaperContent.push(questionContent);
           } catch (e) {
-            console.log(question);
             console.log(e);
           }
         });
@@ -185,8 +184,6 @@ const detectLanguage = (str) => {
       language = key;
     }
   }
-
-  console.log(str, langSplit);
 
   return language;
 };
