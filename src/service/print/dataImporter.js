@@ -4,18 +4,18 @@ const envVariables = require("../../envVariables");
 const getQuestionForSection = async (id) => {
   const url = `${envVariables.baseURL}/action/content/v3/hierarchy/${id}?mode=edit`;
   return fetch(url)
-    .then((r) => r.json())
+    .then((r1) => r1.json())
     .then((r) => {
       const itemset = r.result.content.itemSets[0];
       const urlItemset = `${envVariables.baseURL}/action/itemset/v3/read/${itemset.identifier}`;
       return fetch(urlItemset)
-        .then((r) => r.json())
+        .then((r2) => r2.json())
         .then((r) => {
           const item = r.result.itemset.items[0];
           const urlItem = `${envVariables.baseURL}/action/assessment/v3/items/read/${item.identifier}`;
           console.log(urlItem);
           return fetch(urlItem)
-            .then((r) => r.json())
+            .then((r3) => r3.json())
             .then((r) => {
               const question = r.result.assessment_item;
               return question;
@@ -27,7 +27,7 @@ const getQuestionForSection = async (id) => {
 const getData = async (id) => {
   const url = `${envVariables.baseURL}/action/content/v3/hierarchy/${id}?mode=edit`;
   return fetch(url)
-    .then((r) => r.json())
+    .then((r4) => r4.json())
     .then((r) => {
       const data = r.result.content;
       const sections = data.children;

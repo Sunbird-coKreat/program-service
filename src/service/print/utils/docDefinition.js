@@ -321,8 +321,6 @@ module.exports = {
   getTimeAndMarks,
   getInstructions,
   getSectionTitle,
-  getSectionTitle,
-  getSectionTitle,
   getMCQ,
   getFTB,
   getTF,
