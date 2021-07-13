@@ -630,6 +630,20 @@ class ProgramServiceHelper {
 
     const collections = _.get(data, 'config.collections');
     const collectionIds = _.map(collections, 'id');
+    if(_.includes(_.get(data, 'config.contentAdditionMode'), 'new')) {
+      rspObj.contentAdditionMode = 'add';
+      rspObj.responseCode = 'OK'
+      rspObj.result =  collections.map(collection => { 
+        return { 
+          result: {
+            content_id: collection.id
+          }
+        }
+      });
+      cb(null, rspObj);
+      return true;
+    }
+    
     const additionalMetaData = {
       programId: _.get(data, 'program_id'),
       allowedContentTypes: [],
