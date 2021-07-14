@@ -414,26 +414,31 @@ function unlistPublishProgram(req, response) {
         if(config) {
           let targetObjectMap = JSON.parse(config.value || (config.dataValues && config.dataValues.value));
           let targetCollectionPrimaryCategory = _.get(res, 'targetcollectionprimarycategories') || _.get(res, 'dataValues.targetcollectionprimarycategories');
-          if(!_.isEmpty(targetCollectionPrimaryCategory)) {
+          if(!_.isEmpty(targetCollectionPrimaryCategory) || !_.isEmpty(targetObjectMap)) {
             let targetConfig = _.find(targetObjectMap, (obj) => obj.name === targetCollectionPrimaryCategory[0].name);
             if(!_.isEmpty(targetConfig)) {
               let targetAdditionMode = targetConfig.contentAdditionMode;
-              if(_.includes(targetAdditionMode, 'New')) {
-                rspObj.contentAdditionMode = 'New';
-                rspObj.responseCode = 'OK';
-                let collections = _.get(res, 'config.collections') || _.get(res, 'dataValues.config.collections');
-                if(collections) {
-                  rspObj.result =  collections.map(collection => {
-                    return {
-                      result: {
-                        content_id: collection.id
+              if(!_.isEmpty(targetAdditionMode)) {
+                if(_.includes(targetAdditionMode, 'New')) {
+                  rspObj.contentAdditionMode = 'New';
+                  rspObj.responseCode = 'OK';
+                  let collections = _.get(res, 'config.collections') || _.get(res, 'dataValues.config.collections');
+                  if(collections) {
+                    rspObj.result =  collections.map(collection => {
+                      return {
+                        result: {
+                          content_id: collection.id
+                        }
                       }
-                    }
-                  });
-                  cb(null, rspObj);
+                    });
+                    cb(null, rspObj);
+                  }
+                }
+                else if(_.includes(targetAdditionMode, 'Search')) {
+                  programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
                 }
               }
-              else if(_.includes(targetAdditionMode, 'Search')) {
+              else {
                 programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
               }
             }
