@@ -878,7 +878,7 @@ function addOrUpdateNomination(programDetails, orgosid) {
       }
       let findNomWhere =  {
         program_id: programDetails.program_id,
-        organisation_id: orgosidn
+        organisation_id: orgosid
       }
       return model.nomination.findOne({
         where: findNomWhere
