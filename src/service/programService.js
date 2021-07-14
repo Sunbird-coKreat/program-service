@@ -418,7 +418,7 @@ function unlistPublishProgram(req, response) {
             let targetConfig = _.find(targetObjectMap, (obj) => obj.name === targetCollectionPrimaryCategory[0].name);
             if(!_.isEmpty(targetConfig)) {
               let targetAdditionMode = targetConfig.contentAdditionMode;
-              if(_.includes(targetAdditionMode, 'Search')) {
+              if(_.includes(targetAdditionMode, 'New')) {
                 rspObj.contentAdditionMode = 'New';
                 rspObj.responseCode = 'OK';
                 let collections = _.get(res, 'config.collections') || _.get(res, 'dataValues.config.collections');
@@ -433,7 +433,7 @@ function unlistPublishProgram(req, response) {
                   cb(null, rspObj);
                 }
               }
-              else if(_.includes(targetAdditionMode, 'New')) {
+              else if(_.includes(targetAdditionMode, 'Search')) {
                 programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
               }
             }
