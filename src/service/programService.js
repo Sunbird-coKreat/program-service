@@ -296,7 +296,6 @@ function publishProgram(req, response) {
         return response.status(400).send(errorResponse(errObj,errCode+errorCodes.CODE4));
       }
     };
-
     programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
   })
   .catch(function (err) {
@@ -406,8 +405,59 @@ function unlistPublishProgram(req, response) {
         return response.status(400).send(errorResponse(errObj,errCode+errorCodes.CODE4));
       }
     };
-
-    programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
+      model.configuration.findOne({
+        where: {
+          key: 'programTargetObjectMap',
+          status: 'active'
+        }
+      }).then(config => {
+        if(config) {
+          let targetObjectMap = JSON.parse(config.value || (config.dataValues && config.dataValues.value));
+          let targetCollectionPrimaryCategory = _.get(res, 'targetcollectionprimarycategories') || _.get(res, 'dataValues.targetcollectionprimarycategories');
+          if(!_.isEmpty(targetCollectionPrimaryCategory)) {
+            let targetConfig = _.find(targetObjectMap, (obj) => obj.name === targetCollectionPrimaryCategory[0].name);
+            if(!_.isEmpty(targetConfig)) {
+              let targetAdditionMode = targetConfig.contentAdditionMode;
+              if(_.includes(targetAdditionMode, 'Search')) {
+                rspObj.contentAdditionMode = 'New';
+                rspObj.responseCode = 'OK';
+                let collections = _.get(res, 'config.collections') || _.get(res, 'dataValues.config.collections');
+                if(collections) {
+                  rspObj.result =  collections.map(collection => {
+                    return {
+                      result: {
+                        content_id: collection.id
+                      }
+                    }
+                  });
+                  cb(null, rspObj);
+                }
+              }
+              else if(_.includes(targetAdditionMode, 'New')) {
+                programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
+              }
+            }
+            else {
+              programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
+            }
+          }
+          else {
+            programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
+          }
+        }
+      }
+    ).catch(function (err) {
+      console.log(err);
+      loggerService.exitLog({responseCode: 'ERR_READ_PROGRAM'}, logObject);
+      loggerError('',rspObj,errCode+errorCodes.CODE5);
+      return response.status(400).send(errorResponse({
+        apiId: 'api.program.publish',
+        ver: '1.0',
+        msgid: uuid(),
+        responseCode: 'ERR_READ_PROGRAM',
+        result: err
+      },errCode+errorCodes.CODE5));
+    });
   })
   .catch(function (err) {
     console.log(err)
@@ -828,7 +878,7 @@ function addOrUpdateNomination(programDetails, orgosid) {
       }
       let findNomWhere =  {
         program_id: programDetails.program_id,
-        organisation_id: orgosid
+        organisation_id: orgosidn
       }
       return model.nomination.findOne({
         where: findNomWhere
