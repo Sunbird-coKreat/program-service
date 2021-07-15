@@ -405,21 +405,13 @@ function unlistPublishProgram(req, response) {
         return response.status(400).send(errorResponse(errObj,errCode+errorCodes.CODE4));
       }
     };
-      model.configuration.findOne({
-        where: {
-          key: 'programTargetObjectMap',
-          status: 'active'
-        }
-      }).then(config => {
+      programServiceHelper.getConfigurationByKey('programTargetObjectMap', 'active').then(config => {
         if(config) {
-          let targetObjectMap = JSON.parse(config.value || (config.dataValues && config.dataValues.value));
-          let targetCollectionPrimaryCategory = _.get(res, 'targetcollectionprimarycategories') || _.get(res, 'dataValues.targetcollectionprimarycategories');
-          if(!_.isEmpty(targetCollectionPrimaryCategory) || !_.isEmpty(targetObjectMap)) {
-            let targetConfig = _.find(targetObjectMap, (obj) => obj.name === targetCollectionPrimaryCategory[0].name);
-            if(!_.isEmpty(targetConfig)) {
-              let targetAdditionMode = targetConfig.contentAdditionMode;
-              if(!_.isEmpty(targetAdditionMode)) {
-                if(_.includes(targetAdditionMode, 'New')) {
+          let targetObjectMap = JSON.parse(config.value);
+          let targetCollectionPrimaryCategory = _.get(res, 'targetcollectionprimarycategories') || _.get(res, 'dataValues.targetcollectionprimarycategories');          
+          if(!_.isEmpty(targetCollectionPrimaryCategory) && !_.isEmpty(targetObjectMap)) {
+            let targetAdditionMode = programServiceHelper.getTargetAdditionMode(targetObjectMap, targetCollectionPrimaryCategory);                                      
+              if(_.includes(targetAdditionMode, 'New')) {
                   rspObj.contentAdditionMode = 'New';
                   rspObj.responseCode = 'OK';
                   let collections = _.get(res, 'config.collections') || _.get(res, 'dataValues.config.collections');
@@ -433,24 +425,19 @@ function unlistPublishProgram(req, response) {
                     });
                     cb(null, rspObj);
                   }
-                }
-                else if(_.includes(targetAdditionMode, 'Search')) {
-                  programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
-                }
-              }
-              else {
+                }  
+              else if(_.includes(targetAdditionMode, 'Search')) {
                 programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
-              }
-            }
+              }                  
+            } 
             else {
               programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
-            }
+            }        
           }
           else {
             programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
           }
-        }
-      }
+        }      
     ).catch(function (err) {
       console.log(err);
       loggerService.exitLog({responseCode: 'ERR_READ_PROGRAM'}, logObject);
