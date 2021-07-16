@@ -8,6 +8,7 @@ const envVariables = {
     level: process.env.sunbird_service_log_level || 'info',
     LEARNING_SERVICE_URL: process.env.learning_service_url || 'https://dock.sunbirded.org/action/',
     LEARNER_SERVICE_URL: process.env.learner_service_url,
+    SUNBIRD_LEARNER_SERVICE_URL: process.env.sunbird_learner_player_url|| 'http://11.2.6.6/api/',
     CONTENT_SERVICE_URL: process.env.content_service_url || 'https://dock.sunbirded.org/action/',
     OPENSABER_SERVICE_URL: process.env.opensaber_service_url || 'https://dock.sunbirded.org/content/reg',
     SUNBIRD_KAFKA_HOST: process.env.sunbird_kafka_host,
