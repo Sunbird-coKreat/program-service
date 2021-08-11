@@ -297,7 +297,51 @@ function publishProgram(req, response) {
       }
     };
 
-    programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
+    programServiceHelper.getConfigurationByKey('programTargetObjectMap', 'active').then(config => {
+      if(config) {
+        let targetObjectMap = JSON.parse(config.value);
+        let targetCollectionPrimaryCategory = _.get(res, 'targetcollectionprimarycategories') || _.get(res, 'dataValues.targetcollectionprimarycategories');          
+        if(!_.isEmpty(targetCollectionPrimaryCategory) && !_.isEmpty(targetObjectMap)) {
+          let targetAdditionMode = programServiceHelper.getTargetAdditionMode(targetObjectMap, targetCollectionPrimaryCategory);                                      
+            if(_.includes(targetAdditionMode, 'New')) {
+                rspObj.contentAdditionMode = 'New';
+                rspObj.responseCode = 'OK';
+                let collections = _.get(res, 'config.collections') || _.get(res, 'dataValues.config.collections');
+                if(collections) {
+                  rspObj.result =  collections.map(collection => {
+                    return {
+                      result: {
+                        content_id: collection.id
+                      }
+                    }
+                  });
+                  cb(null, rspObj);
+                }
+              }  
+            else if(_.includes(targetAdditionMode, 'Search')) {
+              programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
+            }                  
+          } 
+          else {
+            programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
+          }        
+        }
+        else {
+          programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
+        }
+      }      
+  ).catch(function (err) {
+    console.log(err);
+    loggerService.exitLog({responseCode: 'ERR_READ_PROGRAM'}, logObject);
+    loggerError('',rspObj,errCode+errorCodes.CODE5);
+    return response.status(400).send(errorResponse({
+      apiId: 'api.program.publish',
+      ver: '1.0',
+      msgid: uuid(),
+      responseCode: 'ERR_READ_PROGRAM',
+      result: err
+    },errCode+errorCodes.CODE5));
+  });
   })
   .catch(function (err) {
     console.log(err)
@@ -406,8 +450,51 @@ function unlistPublishProgram(req, response) {
         return response.status(400).send(errorResponse(errObj,errCode+errorCodes.CODE4));
       }
     };
-
-    programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
+    programServiceHelper.getConfigurationByKey('programTargetObjectMap', 'active').then(config => {
+      if(config) {
+        let targetObjectMap = JSON.parse(config.value);
+        let targetCollectionPrimaryCategory = _.get(res, 'targetcollectionprimarycategories') || _.get(res, 'dataValues.targetcollectionprimarycategories');          
+        if(!_.isEmpty(targetCollectionPrimaryCategory) && !_.isEmpty(targetObjectMap)) {
+          let targetAdditionMode = programServiceHelper.getTargetAdditionMode(targetObjectMap, targetCollectionPrimaryCategory);                                      
+            if(_.includes(targetAdditionMode, 'New')) {
+                rspObj.contentAdditionMode = 'New';
+                rspObj.responseCode = 'OK';
+                let collections = _.get(res, 'config.collections') || _.get(res, 'dataValues.config.collections');
+                if(collections) {
+                  rspObj.result =  collections.map(collection => {
+                    return {
+                      result: {
+                        content_id: collection.id
+                      }
+                    }
+                  });
+                  cb(null, rspObj);
+                }
+              }  
+            else if(_.includes(targetAdditionMode, 'Search')) {
+              programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
+            }                  
+          } 
+          else {
+            programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
+          }        
+        }
+        else {
+          programServiceHelper.copyCollections(res, data.request.channel, req.headers, cb);
+        }
+      }      
+  ).catch(function (err) {
+    console.log(err);
+    loggerService.exitLog({responseCode: 'ERR_READ_PROGRAM'}, logObject);
+    loggerError('',rspObj,errCode+errorCodes.CODE5);
+    return response.status(400).send(errorResponse({
+      apiId: 'api.program.publish',
+      ver: '1.0',
+      msgid: uuid(),
+      responseCode: 'ERR_READ_PROGRAM',
+      result: err
+    },errCode+errorCodes.CODE5));
+  });
   })
   .catch(function (err) {
     console.log(err)

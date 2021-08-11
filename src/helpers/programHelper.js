@@ -1185,6 +1185,33 @@ class ProgramServiceHelper {
       })
     })
   }
+
+  getConfigurationByKey(key, status) {    
+    return new Promise( (resolve, reject) => {
+      model.configuration.findAll({
+        where: {
+          key: key,
+          status: status
+        }
+      })
+        .then(res => {
+          const result = _.first(res)
+          return resolve(result ? result.dataValues : null);
+        }).catch(error => {
+          return reject(null)
+        })
+    })
+
+  }
+
+  getTargetAdditionMode(config, categories) {
+    let targetConfig = _.find(config, (obj) => obj.name === _.get(_.head(categories), 'name'));
+    let targetAdditionMode = ['Search'];
+    if(!_.isEmpty(targetConfig)) {
+        targetAdditionMode = targetConfig.contentAdditionMode;
+    }
+    return targetAdditionMode;
+  }
 }
 
 module.exports = ProgramServiceHelper;
