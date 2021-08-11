@@ -179,7 +179,7 @@ const insertAndSetExpiry = async (updates, channel, setChannelExpiry) => {
     actorId: '',
     params: {updates: `${JSON.stringify(updates)}`}
   }
-  console.log(loggerService.logFormate(logObject));
+  console.log(JSON.stringify(loggerService.logFormate(logObject)));
   _.forEach(_.keys(updates), (program) => {
     const programUpdateHashKey = keyGenerator.getProgramUpdatesHashKey(program);
     consolidatedCacheRequest.push({
@@ -189,9 +189,9 @@ const insertAndSetExpiry = async (updates, channel, setChannelExpiry) => {
     setInsert.push(programUpdateHashKey);
   })
   logObject.params = {programUpdatesChannelKey: `${programUpdatesChannelKey}`}
-  console.log(loggerService.logFormate(logObject));
+  console.log(JSON.stringify(loggerService.logFormate(logObject)));
   logObject.params = {setInsert: `${setInsert}`}
-  console.log(loggerService.logFormate(logObject));
+  console.log(JSON.stringify(loggerService.logFormate(logObject)));
   let cacheArray = [..._.map(consolidatedCacheRequest, 'hashInsert'),
   ..._.map(consolidatedCacheRequest, 'hashExpire'),
   client.saddAsync(programUpdatesChannelKey, setInsert)]

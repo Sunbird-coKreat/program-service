@@ -62,7 +62,7 @@ const searchForUpdates = async (req, response) => {
         }
         const newNominations = await searchNominations(nominationSearchRequest);
         logObject.params = { newNominations: `${JSON.stringify(newNominations)}`}
-        console.log("newNominations", loggerService.logFormate(logObject));
+        console.log("newNominations", JSON.stringify(loggerService.logFormate(logObject)));
         if(newNominations.length) {
           const nominationsByProgram = _.groupBy(_.map(newNominations, 'dataValues'), 'program_id');
           programByNominationCount = generateUpdatesMap(nominationsByProgram, 'nominationCount');
@@ -70,7 +70,7 @@ const searchForUpdates = async (req, response) => {
           programByNominationCount = generateUpdatesMap(userRequestedNominations, 'nominationCount');
         }
         logObject.params = { programByNominationCount: programByNominationCount}
-        console.log('programByNominationCount',loggerService.logFormate(logObject));
+        console.log('programByNominationCount', JSON.stringify(loggerService.logFormate(logObject)));
       }
       if(contributionRequest) {
         const contributionSearchRequest = {
@@ -81,7 +81,7 @@ const searchForUpdates = async (req, response) => {
         const newContributions = await searchContributions(contributionSearchRequest, req.headers);
         const contents = _.get(newContributions, 'data.result.content');
         logObject.params = { newContributions: `${JSON.stringify(contents)}`}
-        console.log('newContributions',loggerService.logFormate(logObject));
+        console.log('newContributions', JSON.stringify(loggerService.logFormate(logObject)));
         const notActedUponContents = await getActionPendingContents(contents, req.headers);
         if(notActedUponContents && notActedUponContents.length){
           const contentsByProgram = _.groupBy(notActedUponContents, 'programId');
@@ -90,11 +90,10 @@ const searchForUpdates = async (req, response) => {
           programByContentCount = generateUpdatesMap(userRequestedContributions, 'contributionCount');
         }
         logObject.params = { programByContentCount: programByContentCount}
-        console.log('programByContentCount',loggerService.logFormate(logObject));
+        console.log('programByContentCount', JSON.stringify(loggerService.logFormate(logObject)));
       }
       const mergedUpdates = _.merge(programByNominationCount, programByContentCount);
       const result = await insertAndSetExpiry(mergedUpdates, channel, true);
-      console.log(result)
       rspObj.responseCode = responseCode.SUCCESS;
       rspObj.result = mergedUpdates;
       return response.status(200).send(successResponse(rspObj));
@@ -103,10 +102,10 @@ const searchForUpdates = async (req, response) => {
       let programByContentCount = {};
 
       logObject.params = { nonExistingNominations: `${nonExistingNominations}`}
-      console.log('nonExistingNominations',loggerService.logFormate(logObject));
+      console.log('nonExistingNominations', JSON.stringify(loggerService.logFormate(logObject)));
 
       logObject.params = { nonExistingContributions: `${nonExistingContributions}`}
-      console.log('nonExistingContributions',loggerService.logFormate(logObject));
+      console.log('nonExistingContributions', JSON.stringify(loggerService.logFormate(logObject)));
 
       if(nonExistingNominations.length) {
         const nominationSearchRequest = {
@@ -116,7 +115,7 @@ const searchForUpdates = async (req, response) => {
         }
         const newNominations = await searchNominations(nominationSearchRequest);
         logObject.params = { newNominations: `${JSON.stringify(newNominations)}`}
-        console.log('newNominations',loggerService.logFormate(logObject));
+        console.log('newNominations', JSON.stringify(loggerService.logFormate(logObject)));
         if(newNominations.length) {
           const nominationsByProgram = _.groupBy(_.map(newNominations, 'dataValues'), 'program_id');
           programByNominationCount = generateUpdatesMap(nominationsByProgram, 'nominationCount')
@@ -124,10 +123,10 @@ const searchForUpdates = async (req, response) => {
           programByNominationCount = generateUpdatesMap(nonExistingNominations, 'nominationCount');
         }
         logObject.params = { programByNominationCount: programByNominationCount}
-        console.log('programByNominationCount',loggerService.logFormate(logObject));
+        console.log('programByNominationCount', JSON.stringify(loggerService.logFormate(logObject)));
 
         logObject.params = { programByNominationCount: `${JSON.stringify(programByNominationCount)}`}
-        console.log('programByNominationCount',loggerService.logFormate(logObject));
+        console.log('programByNominationCount', JSON.stringify(loggerService.logFormate(logObject)));
 
       }
       if(nonExistingContributions.length) {
@@ -139,24 +138,24 @@ const searchForUpdates = async (req, response) => {
         const newContributions = await searchContributions(contributionSearchRequest, req.headers);
         const contents = _.get(newContributions, 'data.result.content');
         logObject.params = { 'contents': `${JSON.stringify(contents)}`}
-        console.log('Contents',loggerService.logFormate(logObject));
+        console.log('Contents', JSON.stringify(loggerService.logFormate(logObject)));
         const notActedUponContents = await getActionPendingContents(contents, req.headers);
         logObject.params = { notActedUponContents: `${JSON.stringify(notActedUponContents)}`}
-        console.log('notActedUponContents',loggerService.logFormate(logObject));
+        console.log('notActedUponContents', JSON.stringify(loggerService.logFormate(logObject)));
         if(notActedUponContents && notActedUponContents.length) {
           const contentsByProgram = _.groupBy(notActedUponContents, 'programId');
           logObject.params = { contentsByProgram: `${JSON.stringify(contentsByProgram)}`}
-          console.log('contentsByProgram',loggerService.logFormate(logObject));
+          console.log('contentsByProgram', JSON.stringify(loggerService.logFormate(logObject)));
           programByContentCount = generateUpdatesMap(contentsByProgram, 'contributionCount');
         } else {
           programByContentCount = generateUpdatesMap(nonExistingContributions, 'contributionCount');
         }
         logObject.params = { programByContentCount: `${JSON.stringify(programByContentCount)}`}
-        console.log('programByContentCount',loggerService.logFormate(logObject));
+        console.log('programByContentCount', JSON.stringify(loggerService.logFormate(logObject)));
       }
       const newUpdates = _.merge(programByNominationCount, programByContentCount);
       logObject.params = { 'New updates': `${JSON.stringify(newUpdates)}`}
-      console.log('newUpdates',loggerService.logFormate(logObject));
+      console.log('newUpdates', JSON.stringify(loggerService.logFormate(logObject)));
       const existingUpdates = await findAll(channelPrograms, stripRedisKey);
       const mergedUpdates = _.merge(existingUpdates, newUpdates);
       const result = await insertAndSetExpiry(newUpdates, channel, false);
@@ -167,14 +166,14 @@ const searchForUpdates = async (req, response) => {
     } else if(channelPrograms.length) {
       const existingUpdates = await findAll(channelPrograms, stripRedisKey);
       logObject.params = { 'existingUpdates': existingUpdates}
-      console.log('existingUpdates',loggerService.logFormate(logObject));
+      console.log('existingUpdates', JSON.stringify(loggerService.logFormate(logObject)));
       rspObj.responseCode = responseCode.SUCCESS;
       rspObj.result = existingUpdates;
       loggerService.exitLog({responseCode: rspObj.responseCode}, entryExitlog);
       return response.status(200).send(successResponse(rspObj));
     }
   } catch(error) {
-    console.log(error)
+    console.log(JSON.stringify(error));
     rspObj.errCode = programFeedMessages.SEARCH.FAILED_CODE;
     rspObj.errMsg = error.message || programFeedMessages.SEARCH.FAILED_MESSAGE;
     rspObj.responseCode = responseCode.SERVER_ERROR;

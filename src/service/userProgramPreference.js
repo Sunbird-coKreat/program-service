@@ -34,8 +34,8 @@ function getPreferences(req, response) {
     rspObj.errCode = programMessages.PREFERENCES.READ.MISSING_CODE
     rspObj.errMsg = programMessages.PREFERENCES.READ.MISSING_MESSAGE
     rspObj.responseCode = responseCode.CLIENT_ERROR;
-    loggerError('',rspObj,errCode+errorCodes.CODE1);
-    loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
+    loggerError('', rspObj, errCode+errorCodes.CODE1);
+    loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCodes.CODE1}, logObject);
     return response.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE1))
   }
 
@@ -62,7 +62,7 @@ function getPreferences(req, response) {
         } else {
           rspObj.responseCode = 'ERR_GET_USER_PREFERENCE_FAILED';
           rspObj.result = result.result;
-          loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
+          loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCodes.CODE2}, logObject);
           loggerError(rspObj.responseCode,rspObj,errCode+errorCodes.CODE2);
           return response.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE2));
         }
@@ -264,7 +264,7 @@ function setPreferences(req, response) {
     rspObj.errMsg = programMessages.PREFERENCES.SET.MISSING_MESSAGE
     rspObj.responseCode = responseCode.CLIENT_ERROR;
     loggerError('',rspObj,errCode+errorCodes.CODE1);
-    loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
+    loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCodes.CODE1}, logObject);
     return response.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE1))
   }
   // Todo- check if the preferences is json of MSG
@@ -292,7 +292,7 @@ function setPreferences(req, response) {
           const errCode = programMessages.EXCEPTION_CODE+'_'+programMessages.PREFERENCES.READ.EXCEPTION_CODE
           rspObj.responseCode = 'ERR_GET_USER_PREFERENCE_FAILED';
           rspObj.result = result.result;
-          loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
+          loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCodes.CODE2}, logObject);
           loggerError(rspObj.responseCode,rspObj,errCode+errorCodes.CODE2);
           return response.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE2));
         }

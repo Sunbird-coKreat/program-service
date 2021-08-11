@@ -26,8 +26,8 @@ async function createConfiguration(req, response) {
     rspObj.errMsg = configurationMessages.CREATE.MISSING_MESSAGE;
     rspObj.responseCode = responseCode.CLIENT_ERROR;
     loggerError('Error due to missing fields in the request',rspObj,errCode+errorCodes.CODE1)
-    loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
-    return response.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE1));
+    loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCodes.CODE1}, logObject);
+    return response.status(400).send(errorResponse(rspObj, errCode+errorCodes.CODE1));
   }
   const insertObj = data.request;
   try {
@@ -42,8 +42,8 @@ async function createConfiguration(req, response) {
     rspObj.errMsg = sequelizeErrorMessage ? sequelizeErrorMessage.message : error.message || bulkJobRequestMessages.CREATE.FAILED_MESSAGE;
     rspObj.responseCode = responseCode.SERVER_ERROR;
     loggerError('Error while create a new bulk_job_request',rspObj,errCode+errorCodes.CODE2)
-    loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
-    return response.status(500).send(errorResponse(rspObj,errCode+errorCodes.CODE2));
+    loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCodes.CODE2}, logObject);
+    return response.status(500).send(errorResponse(rspObj, errCode+errorCodes.CODE2));
   }
 }
 
@@ -62,8 +62,8 @@ async function updateConfiguration(req, response) {
     rspObj.errMsg = configurationMessages.UPDATE.MISSING_MESSAGE;
     rspObj.responseCode = responseCode.CLIENT_ERROR;
     loggerError('Error updating configuration request due to missing key field',rspObj,errCode+errorCodes.CODE1)
-    loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
-    return response.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE1));
+    loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCodes.CODE1}, logObject);
+    return response.status(400).send(errorResponse(rspObj, errCode+errorCodes.CODE1));
   }
   const updateStatement = {
     where: {
@@ -81,9 +81,9 @@ async function updateConfiguration(req, response) {
       rspObj.errCode = configurationMessages.UPDATE.PROCESS_ID_MISSING_CODE;
       rspObj.errMsg = configurationMessages.UPDATE.PROCESS_ID_FAILED_MESSAGE;
       rspObj.responseCode = responseCode.CONFIGURATION_KEY_NOT_FOUND;
-      loggerError('Unable to update configuration. key not found.',rspObj,errCode+errorCodes.CODE2)
-      loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
-      return response.status(404).send(errorResponse(rspObj,errCode+errorCodes.CODE2));
+      loggerError('Unable to update configuration. key not found.', rspObj, errCode+errorCodes.CODE2)
+      loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCodes.CODE2}, logObject);
+      return response.status(404).send(errorResponse(rspObj, errCode+errorCodes.CODE2));
     }
     rspObj.responseCode = responseCode.SUCCESS;
     rspObj.result = {
@@ -95,9 +95,9 @@ async function updateConfiguration(req, response) {
     rspObj.errCode = configurationMessages.UPDATE.UPDATE_FAILED_CODE;
     rspObj.errMsg = error.message || configurationMessages.UPDATE.UPDATE_FAILED_MESSAGE;
     rspObj.responseCode = responseCode.SERVER_ERROR;
-    loggerError('Unable to update configuration.',rspObj,errCode+errorCodes.CODE3)
-    loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
-    return response.status(500).send(errorResponse(rspObj,errCode+errorCodes.CODE3));
+    loggerError('Unable to update configuration.', rspObj, errCode+errorCodes.CODE3)
+    loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCodes.CODE3}, logObject);
+    return response.status(500).send(errorResponse(rspObj, errCode+errorCodes.CODE3));
   }
 }
 

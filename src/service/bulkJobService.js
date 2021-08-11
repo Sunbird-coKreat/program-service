@@ -66,8 +66,8 @@ async function readJob(req, response) {
       rspObj.errMsg = `process_id ${req.params.process_id} does not exist`;
       rspObj.responseCode = responseCode.PROCESS_NOT_FOUND;
       loggerError(rspObj,errCode+errorCode.CODE1);
-      loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
-      return response.status(404).send(errorResponse(rspObj,errCode+errorCode.CODE1))
+      loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCode.CODE1}, logObject);
+      return response.status(404).send(errorResponse(rspObj, errCode+errorCode.CODE1))
     }
     rspObj.responseCode = responseCode.SUCCESS;
     rspObj.result = readResponse;
@@ -78,7 +78,7 @@ async function readJob(req, response) {
     rspObj.errMsg =  error.message || bulkJobRequestMessages.READ.FAILED_MESSAGE;
     rspObj.responseCode = responseCode.SERVER_ERROR;
     loggerError(rspObj,errCode+errorCode.CODE2);
-    loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
+    loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCode.CODE2}, logObject);
     return response.status(500).send(errorResponse(rspObj,errCode+errorCode.CODE2));
   }
 }
@@ -96,8 +96,8 @@ async function updateJob(req, response) {
     rspObj.errCode = bulkJobRequestMessages.UPDATE.MISSING_CODE;
     rspObj.errMsg = bulkJobRequestMessages.UPDATE.MISSING_MESSAGE;
     rspObj.responseCode = responseCode.CLIENT_ERROR;
-    loggerError(rspObj,errCode+errorCode.CODE1);
-    loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
+    loggerError(rspObj, errCode+errorCode.CODE1);
+    loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCode.CODE1}, logObject);
     return response.status(400).send(errorResponse(rspObj,errCode+errorCode.CODE1));
   }
 
@@ -117,8 +117,8 @@ async function updateJob(req, response) {
       rspObj.errMsg = bulkJobRequestMessages.UPDATE.PROCESS_ID_FAILED_MESSAGE;
       rspObj.responseCode = responseCode.PROCESS_NOT_FOUND;
       loggerError(rspObj,errCode+errorCode.CODE2);
-      loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
-      return response.status(404).send(errorResponse(rspObj,errCode+errorCode.CODE2))
+      loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCode.CODE2}, logObject);
+      return response.status(404).send(errorResponse(rspObj, errCode+errorCode.CODE2))
     }
     rspObj.responseCode = responseCode.SUCCESS;
     rspObj.result = {
@@ -131,8 +131,8 @@ async function updateJob(req, response) {
     rspObj.errMsg = error.message || bulkJobRequestMessages.UPDATE.UPDATE_FAILED_MESSAGE;
     rspObj.responseCode = responseCode.SERVER_ERROR;
     loggerError(rspObj,errCode+errorCode.CODE3);
-    loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
-    return response.status(500).send(errorResponse(rspObj,errCode+errorCode.CODE3));
+    loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCode.CODE3}, logObject);
+    return response.status(500).send(errorResponse(rspObj, errCode+errorCode.CODE3));
   }
 }
 
@@ -155,8 +155,8 @@ async function searchJob(req, response) {
     rspObj.errMsg = bulkJobRequestMessages.SEARCH.MISSING_MESSAGE;
     rspObj.responseCode = responseCode.CLIENT_ERROR
     loggerError(rspObj,errCode+errorCode.CODE1);
-    loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
-    return response.status(400).send(errorResponse(rspObj,errCode+errorCode.CODE1));
+    loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCode.CODE1}, logObject);
+    return response.status(400).send(errorResponse(rspObj, errCode+errorCode.CODE1));
   }
   try {
     const searchResponse = await model.bulk_job_request.findAll({
@@ -184,8 +184,8 @@ async function searchJob(req, response) {
     rspObj.errCode = bulkJobRequestMessages.SEARCH.FAILED_CODE;
     rspObj.errMsg = error.message || bulkJobRequestMessages.SEARCH.FAILED_MESSAGE;
     rspObj.responseCode = responseCode.SERVER_ERROR;
-    loggerError(rspObj,errCode+errorCode.CODE2);
-    loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
+    loggerError(rspObj, errCode+errorCode.CODE2);
+    loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCode.CODE2}, logObject);
     return response.status(500).send(errorResponse(rspObj,errCode+errorCode.CODE2));
   }
 }

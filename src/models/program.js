@@ -13,7 +13,7 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.TEXT
     },
     type: {
-      type: DataTypes.ENUM("public", "private"),
+      type: DataTypes.ENUM("public", "private", "restricted"),
       allowNull: false
     },
     collection_ids: {
@@ -33,6 +33,9 @@ module.exports = function(sequelize, DataTypes) {
     },
     targetcollectionprimarycategories: {
       type: DataTypes.JSONB
+    },
+    target_type: {
+      type: DataTypes.STRING
     },
     startdate: {
       type: DataTypes.DATE
