@@ -1,39 +1,16 @@
 const { getData } = require("./dataImporter");
 const docx = require("docx");
 const {
-  Document,
   Packer,
-  Paragraph,
-  TextRun,
-  AlignmentType,
-  ImageRun,
-  Table,
-  TableRow,
-  TableCell,
-  WidthType,
 } = docx;
-// const getDocx = require("./getDocx");
 const getDocx = require("./getdocxdata");
 const fs = require("fs");
 
 var {
   docDefinition,
-  getStudentTeacherDetails,
-  getExamName,
-  getGradeHeader,
-  getSubject,
-  getTimeAndMarks,
-  getInstructions,
-  getMCQ,
-  getFTB,
   getSectionTitle,
   getTF,
-  getSA,
-  getVSA,
-  getLA,
-  getComprehension,
   getMTFHeader,
-  getMTFChoice,
 } = require("./utils/docDefinition");
 const ProgramServiceHelper = require("../../helpers/programHelper");
 const axios = require("axios");
@@ -88,28 +65,21 @@ const buildDOCXWithCallback = async (id, callback) => {
       if (data.error) {
         callback(null, data.error, data.errorMsg);
       } else {
-        const subject = data.paperData.subject[0];
-        const grade = data.paperData.gradeLevel[0];
-        const examName = data.paperData.name;
-        const instructions = data.paperData.description;
-        let language = data.paperData.medium[0];
+        let subject ,grade, examName, instructions,language
+        if(data.paperData){
+           subject = data.paperData.subject && data.paperData.subject[0];
+         grade = data.paperData.gradeLevel && data.paperData.gradeLevel[0];
+         examName = data.paperData.name;
+         instructions = data.paperData.description;
+         language = data.paperData.medium && data.paperData.medium[0];
+        }
 
-        // const language = "Noto";
-        data.sectionData.forEach((d) => {
+          data.sectionData.forEach((d) => {
           d.questions.forEach((element, index) => {
             const marks = parseInt(d.section.children[index].marks);
             if (!isNaN(marks)) totalMarks += marks;
           });
         });
-
-        const contentBase = [
-          getStudentTeacherDetails(),
-          getExamName(examName),
-          getGradeHeader(grade),
-          getSubject(subject),
-          getTimeAndMarks(90, totalMarks),
-          getInstructions(instructions, language),
-        ];
 
         const questionPaperContent = [];
         const paperDetails = {
