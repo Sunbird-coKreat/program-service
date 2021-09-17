@@ -144,10 +144,10 @@ function create(data, paperData) {
                     })
                   );
                 } else if (question[0].type === "LA") {
-                  // console.log("LA Dta:", page);
+                  let count = 0;
                   arr.push(Marks(question));
                   question[0].Questions.map((item) => {
-                    arr.push(createSAObject(item));
+                    arr.push(createSAObject(item, count));
                   });
                   arr.push(
                     new Paragraph({
@@ -160,7 +160,7 @@ function create(data, paperData) {
                   arr.push(Marks(question));
                   question[0].Questions.map((item) => {
                     // console.log(item)
-                    arr.push(createSAObject(item, count++));
+                    arr.push(createSAObject(item, count));
                   });
                   arr.push(
                     new Paragraph({
