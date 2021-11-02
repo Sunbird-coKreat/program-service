@@ -329,11 +329,6 @@ exports.REQUEST = {
     INVALID_MESSAGE: 'Access denied',
     INFOVALIDATETOKEN: 'Validate user token',
     INFOMISSINGTOKEN: 'Missing token'
-  },
-  QUML_REQ: {
-    INFO: 'Check and validate request body for quml bulk upload',
-    MISSING_CODE: 'ERR_REQUEST_FIELDS_MISSING',
-    MISSING_MESSAGE: 'Required fields like file or question_category is missing',
   }
 }
 
@@ -740,6 +735,7 @@ exports.PROGRAM = {
   },
 QUML_BULKUPLOAD: {
     EXCEPTION_CODE: 'QUMLBLK',
+    VALIDATION_MESSAGE: 'Validation Errors',
     MISSING_CODE: 'REQUIRED_FIELD_MISSING',
     MISSING_MESSAGE: 'Errors are found in the file. Please correct and upload again',
     FAILED_CODE: 'ERR_QUML_BULKUPLOAD_FAILED',

@@ -3,6 +3,7 @@ const fetch = require("node-fetch");
 const _ = require("lodash");
 const { v4: uuidv4 } = require("uuid");
 const KafkaService = require("../helpers/kafkaUtil");
+const { errorResponse, loggerError, successResponse } = require('../helpers/responseUtil');
 const CSVFileValidator = require("../helpers/csv-helper-util");
 const logger = require("sb_logger_util_v2");
 const loggerService = require("./loggerService");
@@ -17,13 +18,13 @@ let allowedDynamicColumns = [];
 const bulkUploadConfig = {
   maxRows: 300,
 };
-const stackTrace_MaxLimit = 500;
 const max_options_limit = 4;
 let uploadCsvConfig;
 
 const bulkUpload = async (req, res) => {
   bulkUploadErrorMsgs = []
   const rspObj = req.rspObj
+  const reqHeaders = req.headers;
   const logObject = {
     traceId: req.headers["x-request-id"] || "",
     message: programMessages.QUML_BULKUPLOAD.INFO,
@@ -31,59 +32,53 @@ const bulkUpload = async (req, res) => {
   let pId = uuidv4();
   let qumlData;
   setBulkUploadCsvConfig();
-  const unparseData = req.files.File.data.toString('utf8');
+  const csvFileURL = _.get(req, 'body.request.fileUrl', null);
   loggerService.entryLog("Api to upload questions in bulk", logObject);
   const errCode = programMessages.EXCEPTION_CODE+'_'+programMessages.QUML_BULKUPLOAD.EXCEPTION_CODE
-  logger.info({ message: "Qeustionset ID ===>", questionSetID: req.params.questionset_id });
-  const questionCategory = req.query.questionCategory ? req.query.questionCategory : req.body.questionCategory;
-  getQuestionSetHierarchy(req.params.questionset_id, (err, data) => {
+  logger.info({ message: "Qeustionset ID ===>", questionSetID: _.get(req, 'body.request.questionSetId', null)});
+  getQuestionSetHierarchy(_.get(req, 'body.request.questionSetId'), reqHeaders, (err, data) => {
     if(err) {
-      rspObj.errCode = programMessages.QUML_BULKUPLOAD.HIERARCHY_FAILED_CODE;
-      rspObj.errMsg = programMessages.QUML_BULKUPLOAD.HIERARCHY_FAILED_MESSAGE;
-      rspObj.responseCode = responseCode.SERVER_ERROR;
-      loggerError(rspObj,errCode+errorCodes.CODE1);
+      console.log('Error fetching hierarchy for questionSet', JSON.stringify(err));
+      rspObj.errCode = _.get(err, 'params.err') || programMessages.QUML_BULKUPLOAD.HIERARCHY_FAILED_CODE;
+      rspObj.errMsg = _.get(err, 'params.errmsg') || programMessages.QUML_BULKUPLOAD.HIERARCHY_FAILED_MESSAGE;
+      rspObj.responseCode = _.get(err, 'responseCode') || responseCode.SERVER_ERROR;
+      loggerError(rspObj,errCode+errorCodes.CODE2);
       loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
-      return res.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE1));
+      return res.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE2));
     }
     const flattenHierarchyObj=  getFlatHierarchyObj(data);
-    console.log("flattenHierarchyObj ====> ", flattenHierarchyObj);
     const csvValidator = new CSVFileValidator(uploadCsvConfig, allowedDynamicColumns, flattenHierarchyObj);
-    csvValidator.validate(unparseData).then((csvData) => {
+    csvValidator.validate(csvFileURL).then((csvData) => {
       if (!_.isEmpty(bulkUploadErrorMsgs)) {
         rspObj.errCode = programMessages.QUML_BULKUPLOAD.MISSING_CODE;
         rspObj.errMsg = programMessages.QUML_BULKUPLOAD.MISSING_MESSAGE;
         rspObj.responseCode = responseCode.CLIENT_ERROR;
-        rspObj.result = { errors: bulkUploadErrorMsgs };
-        loggerError(rspObj,errCode+errorCodes.CODE2);
+        rspObj.result = { messages: bulkUploadErrorMsgs };
+        loggerError(rspObj,errCode+errorCodes.CODE3);
         loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
-        return res.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE2));
+        return res.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE3));
       }
       qumlData = csvData.data;
       _.forEach(qumlData, (question) => {
-        question = prepareQuestionData(question, data);
-        question['questionCategory'] = questionCategory;
+        question = prepareQuestionData(question, req.body);
         question['questionSetSectionId'] = flattenHierarchyObj[question.level1];
         question["processId"] = pId;
+        console.log("Prepared Question body : =====>", question)
         sendRecordToKafkaTopic(question);
       });
-      const createdResponse = {
-        process_id: pId,
-        questionStatus: `Bulk Upload process has started successfully for the process Id : ${pId}`,
-        "Total no of questions": qumlData.length,
-      };
       logger.info({ message: "Bulk Upload process has started successfully for the process Id", pId});
       rspObj.responseCode = responseCode.SUCCESS;
-      rspObj.result = createdResponse;
+      rspObj.result = { processId: pId};
       loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
       return res.status(200).send(successResponse(rspObj))
     }).catch(err => {
-      console.error(err);
+      console.log('Error while validating the CSV file :: ', JSON.stringify(err));
       rspObj.errCode = programMessages.QUML_BULKUPLOAD.FAILED_CODE;
       rspObj.errMsg = programMessages.QUML_BULKUPLOAD.FAILED_MESSAGE;
       rspObj.responseCode = responseCode.SERVER_ERROR;
-      loggerError(rspObj,errCode+errorCodes.CODE2);
+      loggerError(rspObj,errCode+errorCodes.CODE3);
       loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
-      return res.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE2));
+      return res.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE3));
     });
   })
 };
@@ -95,10 +90,10 @@ const sendRecordToKafkaTopic = (question) => {
       if (err) { 
         logger.error(
           {
-            message: "Something Went wrong while producing kafka",
+            message: "Something Went wrong while producing kafka event",
             errorData: err,
           },
-          errCode+errorCodes.CODE2
+          errCode+errorCodes.CODE4
         );
       }
       console.log('sendRecordWithTopic :: SUCCESS :: ', response);
@@ -150,11 +145,10 @@ const setBulkUploadCsvConfig = () => {
     { name: 'Option4', inputName: 'option4', headerError, maxLength: 1000, maxLengthError },
     { name: 'Option4Image', inputName: 'option4Image', headerError},
     { name: 'AnswerNo', inputName: 'answerNo', required: true, requiredError, headerError },
-    { name: 'Level 1 Question Set Section', inputName: 'level1', required: true, requiredError, headerError },
+    { name: 'Level 1 Question Set Section', inputName: 'level1', headerError },
     { name: 'Keywords', inputName: 'keywords', isArray: true, headerError },
     { name: 'Author', inputName: 'author',headerError, maxLength: 300, maxLengthError },
     { name: 'Copyright', inputName: 'copyright',headerError, maxLength: 300, maxLengthError },
-    { name: 'License', inputName: 'license', headerError, maxLength: 300, maxLengthError },
     { name: 'Attributions', inputName: 'attributions', isArray: true, headerError, maxLength: 300, maxLengthError }
   ];
 
@@ -183,7 +177,7 @@ const setBulkUploadCsvConfig = () => {
       setError(`Answer number not valid at row: ${rowIndex}`);
     }
 
-    if (!_.has(flattenHierarchyObj, row.level1)) {
+    if (!_.isEmpty(row.level1) && !_.has(flattenHierarchyObj, row.level1)) {
       const name = headers.find((r) => r.inputName === 'level1').name || '';
       setError(`${name} is invalid at row: ${rowIndex}`);
       return;
@@ -205,17 +199,20 @@ const setError = (message) => {
   bulkUploadErrorMsgs.push(message);
 }
 
-const prepareQuestionData = (questionMetadata, questionSetMetadata) => {
-  const derivedProperties = ['additionalCategories', 'board', 'medium', 'gradeLevel', 'subject', 'audience',
-                             'license', 'framework', 'channel', 'topic']
-  questionMetadata = _.merge({}, questionMetadata, _.pick(questionSetMetadata, derivedProperties))
-  questionMetadata['questionSetId'] = _.get(questionSetMetadata, 'identifier');
+const prepareQuestionData = (questionMetadata, reqBody) => {
+  const requestedProperties = ['additionalCategories', 'board', 'medium', 'gradeLevel', 'subject', 'audience',
+                  'license', 'framework', 'topic','channel', 'author','status', 'createdBy', 'questionType', 'questionSetId'];
   questionMetadata['questionFileRefId'] = uuidv4();
+  questionMetadata = _.merge({}, questionMetadata, _.pick(reqBody.request, requestedProperties));
+  if(!_.has(questionMetadata, 'status')) {
+    questionMetadata['status'] = 'Live';
+  }
   return questionMetadata;
 }
 
 //question search API function;
 const qumlSearch = (req, res) => {
+  const rspObj = req.rspObj
   const searchData =  {
     "request": { 
         "filters":{
@@ -241,16 +238,16 @@ const qumlSearch = (req, res) => {
   })
     .then((response) => response.json())
     .then(async(resData) => {
-      rspObj.responseCode = "OK";
-      rspObj.result = {
-        questionStatus: `Successfully fetched the data for the given request: ${searchData}`,
-      };
+      console.log(resData);
+      rspObj.responseCode = resData.responseCode || responseCode.SUCCESS;
+      rspObj.result = { ...resData.result  }
       logger.info({ message: "Successfully Fetched the data", rspObj });
-      res.csv(resData.result.Question)
-    loggerService.exitLog(
-     "Successfully got the Questions",
-      rspObj,
-    );    
+      // res.csv(resData.result.Question)
+      loggerService.exitLog(
+      "Successfully got the Questions",
+        rspObj,
+      );    
+      return res.status(200).send(successResponse(rspObj))
     })
     .catch((error) => {
       rspObj.errMsg = "Something went wrong while fetching the data";
@@ -277,13 +274,11 @@ const qumlSearch = (req, res) => {
 };
 
 //Read QuestionSet Hierarchy function;
-const getQuestionSetHierarchy = (questionSetId, callback) => {
+const getQuestionSetHierarchy = (questionSetId,reqHeaders,  callback) => {
+  if (_.isEmpty(questionSetId)) { return callback(null, {}); }
   fetch(`${envVariables.SUNBIRD_ASSESSMENT_SERVICE_BASE_URL}/questionset/v1/hierarchy/${questionSetId}?mode=edit`, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-        "Authorization" : `Bearer ${envVariables.SUNBIRD_PORTAL_API_AUTH_TOKEN}`
-    }
+    headers: reqHeaders
   })
   .then((response) => response.json())
   .then((readResponseData) => {
@@ -294,7 +289,6 @@ const getQuestionSetHierarchy = (questionSetId, callback) => {
     }
   })
   .catch((error) => {
-    console.error("Error:", error);
     logger.error({
       message: `Something Went Wrong While fetching the questionset hierarchy ${error}`,
     });
@@ -303,7 +297,7 @@ const getQuestionSetHierarchy = (questionSetId, callback) => {
 };
 
 const getFlatHierarchyObj = (data, hierarchyObj = {}) => {
-  if (data) {
+  if (!_.isEmpty(data)) {
     hierarchyObj[data.name] = data.identifier;
   }
   _.forEach(data.children, child => {
@@ -312,51 +306,6 @@ const getFlatHierarchyObj = (data, hierarchyObj = {}) => {
     }
   });
   return hierarchyObj;
-}
-
-function successResponse(data) {
-  var response = {}
-  response.id = data.apiId
-  response.ver = data.apiVersion
-  response.ts = new Date()
-  response.params = getParams(data.msgid, 'successful', null, null)
-  response.responseCode = data.responseCode || 'OK'
-  response.result = data.result
-  return response
-}
-
-function errorResponse(data,errCode) {
-  var response = {}
-  response.id = data.apiId
-  response.ver = data.apiVersion
-  response.ts = new Date()
-  response.params = getParams(data.msgId, 'failed', data.errCode, data.errMsg)
-  response.responseCode = errCode + '_' + data.responseCode
-  response.result = data.result
-  return response
-}
-
-function getParams(msgId, status, errCode, msg) {
-  var params = {}
-  params.resmsgid = uuidv4()
-  params.msgid = msgId || null
-  params.status = status
-  params.err = errCode
-  params.errmsg = msg
-
-  return params
-}
-
-function loggerError(errmsg,data,errCode) {
-  var errObj = {}
-  errObj.eid = 'Error'
-  errObj.edata = {
-    err : errCode,
-    errtype : errmsg || data.errMsg,
-    requestid : data.msgId || uuidv4(),
-    stacktrace : _.truncate(JSON.stringify(data), { 'length': stackTrace_MaxLimit})
-  }
-  logger.error({ msg: 'Error log', errObj})
 }
 
 module.exports = {

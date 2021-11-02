@@ -17,11 +17,6 @@ const templateClassMap = {
   "2" : 'mcq-vertical-split',
   "3" : 'mcq-horizontal'
 }
-const difficultyLevelMap = {
-  "1" : 'Easy',
-  "2" : 'Medium',
-  "3" : 'Difficult'
-}
 const total_options = 4;
 const rspObj = {};
 
@@ -47,7 +42,6 @@ const qumlConsumer = () => {
     var consumerGroup = new ConsumerGroup(options, [
       envVariables.SUNBIRD_QUESTION_BULKUPLOAD_TOPIC
     ]);
-
     consumerGroup.on("message", function (message) {
         logger.info({ message: "Entered into the consumer service" });
         let parsedJsonValue = JSON.parse(message.value);;
@@ -72,11 +66,18 @@ const initQuestionCreateProcess = (questionData) => {
     async.apply(startDownloadFileProcess, questionData),
     async.apply(prepareQuestionBody),
     async.apply(createQuestion),
-    async.apply(reviewQuestion),
-    async.apply(publishQuestion),
-    async.apply(linkQuestionToQuestionSet, questionData.questionSetId, questionData.questionSetSectionId)
+    async.apply(reviewQuestion, questionData.status),
+    async.apply(publishQuestion, questionData.status),
+    async.apply(linkQuestionToQuestionSet, questionData)
   ], function (err, result) {
-      if(err) { return console.error('initQuestionCreateProcess :: ERROR ::', err); }
+      if(err) { 
+        return logger.error(
+          {
+            message: `Something Went Wrong While Creating the question ${JSON.stringify(error)}`,
+          },
+          err
+        ); 
+      }
       console.log('initQuestionCreateProcess :: SUCCESS ::', JSON.stringify(result));
   });
 };
@@ -84,7 +85,7 @@ const initQuestionCreateProcess = (questionData) => {
 const startDownloadFileProcess = (question, outerCallback) => {
   const filesToDownload = _.omitBy(_.pick(question, ['questionImage','option1Image', 'option2Image', 'option3Image', 'option4Image']), _.isEmpty);
   if(_.isEmpty(filesToDownload)) {
-    return outerCallback(question);
+    return outerCallback(null, question);
   }
   const downloadedFiles = {};
   async.eachOfSeries(filesToDownload, function (data, key, callback) {
@@ -96,7 +97,7 @@ const startDownloadFileProcess = (question, outerCallback) => {
     } else {
       async.waterfall([
         async.apply(downloadFile, data),
-        async.apply(createAssest),
+        async.apply(createAssest, question),
         async.apply(uploadAsset),
         async.apply(deleteFileFromTemp),
       ], function (err, result) {
@@ -129,11 +130,12 @@ const downloadFile = (data, callback) => {
   })
 }
 
-const createAssest = (data, callback) => {
+const createAssest = (question, data, callback) => {
   const extension = path.extname(data.name);  
   const filename = path.basename(data.name, extension);
   const mediaType = _.first(_.split(data.mimeType, '/'));
   console.log("createAssest =====>", data);
+  console.log("createAssest channel =====>", question.channel);
     let reqBody = {
       "request": {
           "asset": {
@@ -149,7 +151,7 @@ const createAssest = (data, callback) => {
   fetch(`${envVariables.SUNBIRD_ASSESSMENT_SERVICE_BASE_URL}/asset/v1/create`, {
       method: "POST", // or 'PUT'
       headers: {
-        "X-Channel-ID": "sunbird",
+        "X-Channel-ID": question.channel,
         "Content-Type": "application/json",
         "Authorization" : `Bearer ${envVariables.SUNBIRD_PORTAL_API_AUTH_TOKEN}`
       },
@@ -165,9 +167,8 @@ const createAssest = (data, callback) => {
       }
     })
     .catch((error) => {
-      console.error("Error:", error);
       logger.error({
-        message: `Something Went Wrong While Creating the assets ${error}`,
+        message: `Error while creating the assest ::  ${JSON.stringify(error)}`,
       });
       callback(error);
     });
@@ -195,9 +196,8 @@ const uploadAsset = (data, callback) => {
       }
     })
     .catch((error) => {
-      console.error("Error:", error);
       logger.error({
-        message: `Something Went Wrong While uploading the assets ${error}`,
+        message: `Error while uploading the assest ::  ${JSON.stringify(error)}`,
       });
       callback(error);
     });
@@ -232,25 +232,23 @@ const getIdFromUrl = (url) => {
 }
 
 const prepareQuestionBody = (question, callback) => {
-  console.log("prepareQuestionBody :: => ", question);
   let metadata = {
     code : uuidv4(),
     mimeType: 'application/vnd.sunbird.question',
     editorState: {},
     body: mergeQuestionTextAndImage(question.questionText, question.questionImage)
   };
-  const questionType  = question.questionCategory.toLowerCase();
+  const questionType  = question.questionType.toLowerCase();
   if (questionType === 'mcq') {
     metadata = _.assign(metadata, prepareMcqBody(question));
   }
-  if(!_.isEmpty(question.difficultyLevel)) { 
-    metadata['difficultyLevel'] = difficultyLevelMap[question.difficultyLevel];
-  }
+
   metadata = _.assign(metadata, _.pick(question, ['additionalCategories', 'board', 'medium', 'gradeLevel', 
   'subject', 'topic', 'learningOutcome','skill','keywords','audience', 'author', 'copyright', 'license', 'attributions',
-  'channel', 'framework', 'topic']));
+  'channel', 'framework', 'topic', 'createdBy', 'questionFileRefId', 'processId']));
   metadata.editorState.question = mergeQuestionTextAndImage(question.questionText, question.questionImage);
   metadata = _.omitBy(metadata, _.isEmpty);
+  console.log("prepareQuestionBody :: => ", metadata);
   callback(null, metadata);
 }
 
@@ -295,7 +293,7 @@ const prepareMcqBody = (question) => {
     editorState: {
       options
     },
-    qType: _.toUpper(question.questionCategory),
+    qType: _.toUpper(question.questionType),
     primaryCategory: 'Multiple Choice Question'
   };
   return metadata;
@@ -351,16 +349,20 @@ const createQuestion = (questionBody, callback) => {
       }
     })
     .catch((error) => {
-      console.error("Error:", error);
       logger.error({
-        message: `Something Went Wrong While Creating the question ${error}`,
+        message: `Error while creating the question ::  ${JSON.stringify(error)}`,
       });
       callback(error);
   });
 
 }
 
-const reviewQuestion = (questionRes, callback) => {
+const reviewQuestion = (status, questionRes, callback) => {
+
+  if(status && _.toLower(status) === 'draft') {
+    return callback(null, questionRes);
+  }
+
   let reviewData = { request: { question: {} } };
   fetch(`${envVariables.SUNBIRD_ASSESSMENT_SERVICE_BASE_URL}/question/v1/review/${questionRes.result.identifier}`,
     {
@@ -374,6 +376,7 @@ const reviewQuestion = (questionRes, callback) => {
   )
     .then((response) => response.json())
     .then((reviewResponseData) => {
+      console.log("reviewQuestion response:: ", reviewResponseData);
       if (reviewResponseData.responseCode && _.toLower(reviewResponseData.responseCode) === "ok") {
         callback(null, reviewResponseData);
       } else {
@@ -381,10 +384,8 @@ const reviewQuestion = (questionRes, callback) => {
       }
     })
     .catch((error) => {
-      console.error("Error:", error);
       logger.error({
-        message:
-          "Something Went wrong while reviewing the questions",
+        message: `Error while reviewing the question ::  ${JSON.stringify(error)}`,
       });
       updateResponse(
         questionRes.result.identifier,
@@ -394,7 +395,10 @@ const reviewQuestion = (questionRes, callback) => {
     });
 }
 
-const publishQuestion = (questionRes, callback) => {
+const publishQuestion = (status, questionRes, callback) => {
+  if(status && _.includes(['draft', 'review'], _.toLower(status))) {
+    return callback(null, questionRes);
+  }
   let publishApiData = { request: { question: {} } };
   fetch(
     `${envVariables.SUNBIRD_ASSESSMENT_SERVICE_BASE_URL}/question/v1/publish/${questionRes.result.identifier}`,
@@ -408,6 +412,7 @@ const publishQuestion = (questionRes, callback) => {
     })
     .then((response) => response.json())
     .then((publishResponseData) => {
+      console.log("reviewQuestion response:: ", publishResponseData);
       if (publishResponseData.responseCode && _.toLower(publishResponseData.responseCode) === "ok") {
         callback(null, publishResponseData);
       } else {
@@ -415,7 +420,9 @@ const publishQuestion = (questionRes, callback) => {
       }
     })
     .catch((error) => {
-      console.error("Error:", error);
+      logger.error({
+        message: `Error while publishing the question ::  ${JSON.stringify(error)}`,
+      });
       updateResponse(
         questionRes.result.identifier,
         `Something went wrong while Publishing the question`
@@ -424,9 +431,16 @@ const publishQuestion = (questionRes, callback) => {
     });
 }
 
-const linkQuestionToQuestionSet = (questionSetId, questionSetSectionId, questionRes, callback) => {
+const linkQuestionToQuestionSet = (questionData, questionRes, callback) => {
+  if(!_.has(questionData, 'questionSetId') && _.isEmpty(questionData.questionSetSectionId)) {
+    return callback(null, 'DONE');
+  }
   let publishApiData = { 
-    request: { questionset: { "rootId" : questionSetId, collectionId: questionSetSectionId,  "children": [questionRes.result.identifier] } }
+    request: { 
+      questionset: { 
+        "rootId" : questionData.questionSetId, 
+        ...(!_.isEmpty(questionData.questionSetSectionId) && { collectionId: questionData.questionSetSectionId}),
+        "children": [questionRes.result.identifier] } }
   };
   fetch(
     `${envVariables.SUNBIRD_ASSESSMENT_SERVICE_BASE_URL}/questionset/v1/add`,
@@ -441,13 +455,15 @@ const linkQuestionToQuestionSet = (questionSetId, questionSetSectionId, question
     .then((response) => response.json())
     .then((linkResponseData) => {
       if (linkResponseData.responseCode && _.toLower(linkResponseData.responseCode) === "ok") {
-        updateResponse(
-          questionRes.result.identifier,
-          `Successfully linked the question for the identifier:${questionRes.result.identifier}`
-        );
+        // updateResponse(
+        //   questionRes.result.identifier,
+        //   `Successfully linked the question for the identifier:${questionRes.result.identifier}`
+        // );
         callback(null, linkResponseData);
       } else {
-        console.error("Error:", linkResponseData);
+        logger.error({
+          message: `Error while linking the question ::  ${JSON.stringify(error)}`,
+        });
         updateResponse(
           questionRes.result.identifier,
           `Something went wrong while linking the question`
@@ -456,7 +472,9 @@ const linkQuestionToQuestionSet = (questionSetId, questionSetSectionId, question
       }
     })
     .catch((error) => {
-      console.error("Error:", error);
+      logger.error({
+        message: `Error while linking the question ::  ${JSON.stringify(error)}`,
+      });
       updateResponse(
         questionRes.result.identifier,
         `Something went wrong while linking the question`
@@ -472,18 +490,21 @@ const updateResponse = (updateData, updateMessage) => {
     request: {
       question: {
         questionUploadStatus: updateMessage,
-      },
-    },
+      }
+    }
   };
+  console.log("updateResponse :: request Body::", updateNewData);
   fetch(`${envVariables.SUNBIRD_ASSESSMENT_SERVICE_BASE_URL}/question/v1/update/${updateData}`, {
       method: "PATCH", // or 'PUT'
       headers: {
         "Content-Type": "application/json",
+        "Authorization" : `Bearer ${envVariables.SUNBIRD_PORTAL_API_AUTH_TOKEN}`
       },
       body: JSON.stringify(updateNewData),
     })
     .then((response) => response.json())
     .then((updateResult) => {
+      console.log("updateResult :: ======> ", updateResult);
       rspObj.responseCode = "OK";
       rspObj.result = {
         questionStatus: `Successfully updated the question data for the identifier: ${updateData}`,

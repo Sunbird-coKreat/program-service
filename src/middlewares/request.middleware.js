@@ -5,7 +5,7 @@ var messageUtil = require('../service/messageUtil') //done
 var logger = require('sb_logger_util_v2') // done
 var utilsService = require('../service/utilsService') //
 var contentProvider = require('sb_content_provider_util') // done
-var { ApiInterceptor } = require('sb_api_interceptor') // done
+var ApiInterceptor = require('sb_api_interceptor') // done
 var _ = require('underscore') // done
 var reqMsg = messageUtil.REQUEST
 var responseCode = messageUtil.RESPONSE_CODE
@@ -14,7 +14,7 @@ var jwt = require('jsonwebtoken') // done
 var lodash = require('lodash')
 var configUtil = require('sb-config-util') // done
 var compression = require('compression') // done
-
+const loggerService = require('../service/loggerService');
 var keyCloakConfig = {
   'authServerUrl': process.env.sunbird_keycloak_auth_server_url ? process.env.sunbird_keycloak_auth_server_url : 'https://staging.open-sunbird.org/auth',
   'realm': process.env.sunbird_keycloak_realm ? process.env.sunbird_keycloak_realm : 'sunbird',

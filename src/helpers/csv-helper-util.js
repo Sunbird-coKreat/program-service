@@ -1,6 +1,6 @@
 const _ = require("lodash");
 const Papa = require("papaparse");
-
+global.XMLHttpRequest = require('xhr2');
 class CSVFileValidator {
     csvFile = null;
     csvData = null;
@@ -12,7 +12,7 @@ class CSVFileValidator {
     /**
      * @param {Object} config
      */
-    constructor(config, allowedDynamicColumns, flattenHierarchyObj) {
+    constructor(config, allowedDynamicColumns, flattenHierarchyObj = {}) {
 
         this.config = config;
         this.allowedDynamicColumns = allowedDynamicColumns;
@@ -47,7 +47,7 @@ class CSVFileValidator {
             return this.handleError(this.config, 'extraHeaderError', `Invalid data found in columns: ${invalidColumns.join(',')}`, [invalidColumns, expectedColumns, foundColumns]);
         }
 
-        // One row for headers and one empty blank row at last
+        // One row for headers
         const actualRows = this.csvData.length - 1;
 
         // Empty rows or file validation
@@ -222,16 +222,17 @@ class CSVFileValidator {
      * @param {File} csvFile
      * @private
      */
-    validate(csvFile) {
-        this.csvFile = csvFile;
+    validate(csvFilePath) {
+        this.csvFile = csvFilePath;
         this.response = {
             inValidMessages: [],
             data: []
         };
 
         return new Promise((resolve, reject) => {
-            Papa.parse(this.csvFile, {
-                complete: (results) => {
+            Papa.parse(csvFilePath, {
+                download: true,
+                complete: (results, file) => {
                     this.csvData = results.data;
                     const dynamicHeaders = !_.isEmpty(this.allowedDynamicColumns) ? // 10
                     [...this.config.headers, ..._.filter(this.allowedDynamicColumns, columns => {
