@@ -214,7 +214,19 @@ class ProgramServiceHelper {
         };
       return this.searchWithProgramId(queryFilter, req);
   }
-
+  getContentContributionsWithProgramId(program_id, req) {
+    const queryFilter = {
+      filters: {
+        programId: program_id,
+        objectType: ['content', 'questionset'],
+        status: ['Draft', 'Live'],
+        contentType: { '!=': 'Asset' },
+        mimeType: { '!=': 'application/vnd.ekstep.content-collection' }
+      },
+      not_exists: ['sampleContent'],
+    };
+    return this.searchWithProgramId(queryFilter, req);
+  }
   getNominationWithProgramId(programId) {
     const facets = ['collection_ids', 'status'];
     const promise = model.nomination.findAll({
@@ -238,15 +250,63 @@ class ProgramServiceHelper {
     return promise;
   }
 
-  handleMultiProgramDetails(resGroup) {
+  handleMultiProgramDetails(resGroup, programObjs, targetType = 'collections') {
       const multiProgramDetails = _.map(resGroup, (resData) => {
         try {
-         return this.prepareTableData(resData);
+          if (targetType === 'collections') {
+            return this.prepareTableData(resData);
+          } else if(targetType === 'searchCriteria') {
+            return this.prepareContentsTableData(resData, programObjs);
+          }
         } catch(err) {
-         throw err
+        throw err
         }
       });
       return multiProgramDetails;
+  }
+  prepareContentsTableData(resData, programObjs) {
+    try {
+      let contents = [];
+      let tableData = [];
+      let response = resData[0].data;
+        if (response && response.result && (_.get(response.result, 'content')|| _.get(response.result, 'QuestionSet'))) {
+          contents = _.compact(_.concat(_.get(response.result, 'QuestionSet'), _.get(response.result, 'content')));
+        }
+        if (contents.length) {
+          tableData = _.map(_.filter(contents, (c)=> {
+            if (c.status === 'Live' || (c.status === 'Draft' && c.prevStatus === 'Live')) {
+              return c;
+            }
+          }), (content) => {
+              const program = programObjs[content.programId];
+              let result = {};
+              result[`Content Name`] = content.name || '';
+              result['Framework'] = content.framework || '';
+              result['Board'] = content.board || '';
+              result['Medium'] = content.medium && content.medium.length ? content.medium.join(', ') : '';
+              result['Class'] = content.gradeLevel && content.gradeLevel.length ? content.gradeLevel.join(', ') : '';
+              result['Subject'] = content.subject && content.subject.length ? content.subject.join(', ') : '';
+              result['Creator'] = content.creator || '';
+              result['Status'] = null;
+              if (content.status === 'Live') {
+                if (program.acceptedcontents  && _.includes(program.acceptedcontents || [], content.identifier)) {
+                  result['Status']  = 'Approved';
+                } else if (program.rejectedcontents  && _.includes(program.rejectedcontents || [], content.identifier)) {
+                  result['Status'] = 'Rejected';
+                } else {
+                  result['Status'] = 'Approval Pending';
+                }
+              } else if (content.status === 'Draft' && content.prevStatus === 'Live') {
+                result['Status'] = 'Corrections pending';
+              }
+              return result;
+          }); 
+        }
+        return tableData;
+    } catch (err) {
+      console.log(err);
+      throw 'error in preparing CSV data'
+    }
   }
 
   prepareTableData (resData) {
@@ -1013,7 +1073,7 @@ class ProgramServiceHelper {
         limit: queryRes_Min,
         required: true,
         attributes: {
-          include: [[Sequelize.json('config.subject'), 'subject'], [Sequelize.json('config.defaultContributeOrgReview'), 'defaultContributeOrgReview'], [Sequelize.json('config.framework'), 'framework'], [Sequelize.json('config.board'), 'board'],[Sequelize.json('config.gradeLevel'), 'gradeLevel'], [Sequelize.json('config.medium'), 'medium']],
+          include: [[Sequelize.json('config.subject'), 'subject'], [Sequelize.json('config.defaultContributeOrgReview'), 'defaultContributeOrgReview'], [Sequelize.json('config.framework'), 'framework'], [Sequelize.json('config.board'), 'board'],[Sequelize.json('config.gradeLevel'), 'gradeLevel'], [Sequelize.json('config.medium'), 'medium'], [Sequelize.json('config.frameworkObj'), 'frameworkObj']],
           exclude: ['config', 'description'],
         },
         where: {
@@ -1076,7 +1136,7 @@ class ProgramServiceHelper {
           model: model.program,
           required: true,
           attributes: {
-            include: [[Sequelize.json('config.subject'), 'subject'], [Sequelize.json('config.defaultContributeOrgReview'), 'defaultContributeOrgReview'], [Sequelize.json('config.framework'), 'framework'], [Sequelize.json('config.board'), 'board'],[Sequelize.json('config.gradeLevel'), 'gradeLevel'], [Sequelize.json('config.medium'), 'medium']],
+            include: [[Sequelize.json('config.subject'), 'subject'], [Sequelize.json('config.defaultContributeOrgReview'), 'defaultContributeOrgReview'], [Sequelize.json('config.framework'), 'framework'], [Sequelize.json('config.board'), 'board'],[Sequelize.json('config.gradeLevel'), 'gradeLevel'], [Sequelize.json('config.medium'), 'medium'], [Sequelize.json('config.frameworkObj'), 'frameworkObj']],
             exclude: ['config', 'description'],
           },
           where: {
@@ -1132,7 +1192,7 @@ class ProgramServiceHelper {
             model: model.program,
             required: true,
             attributes: {
-              include: [[Sequelize.json('config.subject'), 'subject'], [Sequelize.json('config.defaultContributeOrgReview'), 'defaultContributeOrgReview'], [Sequelize.json('config.framework'), 'framework'], [Sequelize.json('config.board'), 'board'],[Sequelize.json('config.gradeLevel'), 'gradeLevel'], [Sequelize.json('config.medium'), 'medium']],
+              include: [[Sequelize.json('config.subject'), 'subject'], [Sequelize.json('config.defaultContributeOrgReview'), 'defaultContributeOrgReview'], [Sequelize.json('config.framework'), 'framework'], [Sequelize.json('config.board'), 'board'],[Sequelize.json('config.gradeLevel'), 'gradeLevel'], [Sequelize.json('config.medium'), 'medium'],  [Sequelize.json('config.frameworkObj'), 'frameworkObj']],
               exclude: ['config', 'description'],
             },
             where: {

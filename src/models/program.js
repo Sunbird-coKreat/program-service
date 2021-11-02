@@ -93,6 +93,15 @@ module.exports = function(sequelize, DataTypes) {
     },
     guidelines_url: {
       type: DataTypes.TEXT
+    },
+    acceptedcontents: {
+      type: DataTypes.ARRAY(DataTypes.TEXT)
+    },
+    rejectedcontents: {
+      type: DataTypes.ARRAY(DataTypes.TEXT)
+    },
+    sourcingrejectedcomments: {
+      type: DataTypes.JSONB
     }
   }, {
       timestamps: false,

@@ -1,83 +1,23 @@
 const { getData } = require("./dataImporter");
 const docx = require("docx");
-const {
-  Document,
-  Packer,
-  Paragraph,
-  TextRun,
-  AlignmentType,
-  ImageRun,
-  Table,
-  TableRow,
-  TableCell,
-  WidthType,
-} = docx;
-// const getDocx = require("./getDocx");
+const { Packer } = docx;
 const getDocx = require("./getdocxdata");
 const fs = require("fs");
 
 var {
   docDefinition,
-  getStudentTeacherDetails,
-  getExamName,
-  getGradeHeader,
-  getSubject,
-  getTimeAndMarks,
-  getInstructions,
-  getMCQ,
-  getFTB,
   getSectionTitle,
   getTF,
-  getSA,
-  getVSA,
-  getLA,
-  getComprehension,
   getMTFHeader,
-  getMTFChoice,
 } = require("./utils/docDefinition");
 const ProgramServiceHelper = require("../../helpers/programHelper");
-const axios = require("axios");
 var cheerio = require("cheerio");
 var cheerioTableparser = require("cheerio-tableparser");
 const sizeOf = require("image-size");
 
 const programServiceHelper = new ProgramServiceHelper();
 
-var fonts = {
-  Roboto: {
-    normal: "service/print/utils/fonts/Roboto/Roboto-Regular.ttf",
-    bold: "service/print/utils/fonts/Roboto/Roboto-Medium.ttf",
-    italics: "service/print/utils/fonts/Roboto/Roboto-Italic.ttf",
-    bolditalics: "service/print/utils/fonts/Roboto/Roboto-MediumItalic.ttf",
-  },
-  Hindi: {
-    normal: "service/print/utils/fonts/Hindi/Jaldi-Regular.ttf",
-    bold: "service/print/utils/fonts/Hindi/Jaldi-Bold.ttf",
-    italics: "service/print/utils/fonts/Hindi/Jaldi-Regular.ttf",
-    bolditalics: "service/print/utils/fonts/Hindi/Jaldi-Bold.ttf",
-  },
-  Noto: {
-    normal: "service/print/utils/fonts/Noto/NotoSans-Regular.ttf",
-    bold: "service/print/utils/fonts/Noto/NotoSans-SemiBold.ttf",
-    italics: "service/print/utils/fonts/Noto/NotoSans-Italic.ttf",
-    bolditalics: "service/print/utils/fonts/Noto/NotoSans-SemiBoldItalic.ttf",
-  },
-  English: {
-    normal: "service/print/utils/fonts/Noto/NotoSans-Regular.ttf",
-    bold: "service/print/utils/fonts/Noto/NotoSans-SemiBold.ttf",
-    italics: "service/print/utils/fonts/Noto/NotoSans-Italic.ttf",
-    bolditalics: "service/print/utils/fonts/Noto/NotoSans-SemiBoldItalic.ttf",
-  },
-};
-
-// var printer = new PdfPrinter(fonts);
-// var fs = require("fs");
-const { default: Axios } = require("axios");
 const { size, create } = require("lodash");
-
-var options = {
-  // ...
-};
 
 const buildDOCXWithCallback = async (id, callback) => {
   let error = false;
@@ -88,28 +28,20 @@ const buildDOCXWithCallback = async (id, callback) => {
       if (data.error) {
         callback(null, data.error, data.errorMsg);
       } else {
-        const subject = data.paperData.subject[0];
-        const grade = data.paperData.gradeLevel[0];
-        const examName = data.paperData.name;
-        const instructions = data.paperData.description;
-        let language = data.paperData.medium[0];
-
-        // const language = "Noto";
+        let subject, grade, examName, instructions, language;
+        if (data.paperData) {
+          subject = data.paperData.subject && data.paperData.subject[0];
+          grade = data.paperData.gradeLevel && data.paperData.gradeLevel[0];
+          examName = data.paperData.name;
+          instructions = data.paperData.description;
+          language = data.paperData.medium && data.paperData.medium[0];
+        }
         data.sectionData.forEach((d) => {
           d.questions.forEach((element, index) => {
-            const marks = parseInt(d.section.children[index].marks);
+            const marks = parseInt(element.marks);
             if (!isNaN(marks)) totalMarks += marks;
           });
         });
-
-        const contentBase = [
-          getStudentTeacherDetails(),
-          getExamName(examName),
-          getGradeHeader(grade),
-          getSubject(subject),
-          getTimeAndMarks(90, totalMarks),
-          getInstructions(instructions, language),
-        ];
 
         const questionPaperContent = [];
         const paperDetails = {
@@ -120,50 +52,67 @@ const buildDOCXWithCallback = async (id, callback) => {
         let questionCounter = 0;
 
         for (const d of data.sectionData) {
-          // data.sectionData.forEach((d) => {
           const sectionTitle = getSectionTitle(
             d.section.name,
             detectLanguage(d.section.name)
           );
-          // questionPaperContent.push(sectionTitle);
           const section = d.section;
 
           for (const [index, question] of d.questions.entries()) {
             questionCounter += 1;
-            const marks = section.children[index].marks;
-            // console.log(grade, subject, examName)
+
             let questionContent;
             switch (question.category) {
               case "MCQ":
                 questionContent = [
-                  await renderMCQ(question, questionCounter, marks),
+                  await renderMCQ(question, questionCounter, question.marks),
                 ];
                 break;
               case "FTB":
                 questionContent = [
-                  await renderQuestion(question, questionCounter, marks, "FTB"),
+                  await renderQuestion(
+                    question,
+                    questionCounter,
+                    question.marks,
+                    "FTB"
+                  ),
                 ];
                 break;
               case "SA":
                 questionContent = [
-                  await renderQuestion(question, questionCounter, marks, "SA"),
+                  await renderQuestion(
+                    question,
+                    questionCounter,
+                    question.marks,
+                    "SA"
+                  ),
                 ];
                 break;
               case "LA":
                 questionContent = [
-                  await renderQuestion(question, questionCounter, marks, "LA"),
+                  await renderQuestion(
+                    question,
+                    questionCounter,
+                    question.marks,
+                    "LA"
+                  ),
                 ];
                 break;
               case "VSA":
                 questionContent = [
-                  await renderQuestion(question, questionCounter, marks, "VSA"),
+                  await renderQuestion(
+                    question,
+                    questionCounter,
+                    question.marks,
+                    "VSA"
+                  ),
                 ];
                 break;
               case "MTF":
                 questionContent = await renderMTF(
                   question,
                   questionCounter,
-                  marks,
+                  question.marks,
                   "MTF"
                 );
                 break;
@@ -172,7 +121,7 @@ const buildDOCXWithCallback = async (id, callback) => {
                   await renderComprehension(
                     question,
                     questionCounter,
-                    marks,
+                    question.marks,
                     "COMPREHENSION"
                   ),
                 ];
@@ -182,18 +131,15 @@ const buildDOCXWithCallback = async (id, callback) => {
                   await renderQuestion(
                     question,
                     questionCounter,
-                    marks,
+                    question.marks,
                     "CuriosityQuestion"
                   ),
                 ];
                 break;
             }
-            // console.log("Contents:",questionContent)
             questionPaperContent.push(questionContent);
           }
         }
-
-        // console.log("Contents:",questionPaperContent[1])
         const doc = await getDocx.create(questionPaperContent, paperDetails);
 
         const b64string = await Packer.toBase64String(doc);
@@ -270,11 +216,10 @@ function createImageElement(src, width) {
   imageElement.image = src;
   let img = Buffer.from(src.split(";base64,").pop(), "base64");
   let dimensions = sizeOf(img);
-  console.log("Dimensions", dimensions);
   let resizedWidth = dimensions.width * width;
-  let resizedHeight = dimensions.height * width;
-  imageElement.width = resizedWidth > 150 ? 150 : resizedWidth;
-  imageElement.height = resizedHeight > 150 ? 150 : resizedHeight;
+  imageElement.width = resizedWidth > 200 ? 200 : resizedWidth;
+  imageElement.height =
+    (dimensions.height / dimensions.width) * imageElement.width;
   return imageElement;
 }
 
@@ -340,7 +285,6 @@ async function getStack(htmlString, questionCounter) {
         break;
       case "figure":
         let { style } = elem.attribs;
-        // console.log("Style:",style)
         let width = 1;
         if (style) {
           width = parseFloat(style.split(":").pop().slice(0, -2));
@@ -385,7 +329,8 @@ async function renderMCQ(question, questionCounter, marks) {
       qoBody.search("img") >= 0 ||
       qoBody.search("sup") >= 0 ||
       qoBody.search("sub") >= 0 ||
-      qoBody.match(/<p>/g).length > 1
+      (qoBody.match(/<p>/g) && qoBody.match(/<p>/g).length > 1) ||
+      (qoBody.match(/<ol>/g) && qoBody.match(/<ol>/g).length >= 1)
         ? await getStack(qoBody, answerOptions[index])
         : [`${answerOptions[index]}. ${cleanHTML(qoBody)}`];
     questionOptions.push(qoData);
@@ -395,14 +340,14 @@ async function renderMCQ(question, questionCounter, marks) {
     q.search("img") >= 0 ||
     q.search("sub") >= 0 ||
     q.search("sup") >= 0 ||
-    q.match(/<p>/g).length > 1
+    (q.match(/<p>/g) && q.match(/<p>/g).length > 1) ||
+    (q.match(/<ol>/g) && q.match(/<ol>/g).length > 1)
       ? await getStack(q, questionCounter)
       : [`${questionCounter}. ${cleanHTML(q)}`];
 
   let questionOpt = [];
   let imageProperties = [];
   if (typeof questionOptions[0][1] === "object") {
-    // console.log("Que:",questionOptions)
     questionOpt.push(questionOptions[0][0] + questionOptions[0][1].image);
     imageProperties.push({
       width: questionOptions[0][1].width,
@@ -467,9 +412,16 @@ async function renderMCQ(question, questionCounter, marks) {
     Marks: marks,
     Language: detectLanguage(questionTitle[0]),
     type: "MCQ",
-    height: imageProperties[0].height,
-    width: imageProperties[0].width,
+    height1: imageProperties[0].height,
+    width1: imageProperties[0].width,
+    height2: imageProperties[1].height,
+    width2: imageProperties[1].width,
+    height3: imageProperties[2].height,
+    width3: imageProperties[2].width,
+    height4: imageProperties[3].height,
+    width4: imageProperties[3].width,
   };
+
   return data;
 }
 
@@ -482,7 +434,8 @@ async function renderQuestion(question, questionCounter, marks, Type) {
     question.editorState.question.search("sup") >= 0 ||
     question.editorState.question.search("ol") >= 0 ||
     question.editorState.question.search("ul") >= 0 ||
-    question.editorState.question.match(/<p>/g).length > 1
+    (question.editorState.question.match(/<p>/g) && question.editorState.question.match(/<p>/g).length > 1) ||
+    (question.editorState.question.match(/<ol>/g) && question.editorState.question.match(/<ol>/g).length > 1)
   ) {
     data = await getStack(question.editorState.question, questionCounter);
   } else {
@@ -507,8 +460,9 @@ async function renderComprehension(question, questionCounter, marks, Type) {
     question.editorState.question.search("sup") >= 0 ||
     question.editorState.question.search("ol") >= 0 ||
     question.editorState.question.search("ul") >= 0 ||
-    question.editorState.question.match(/<p>/g).length > 1
-  ) {
+    (question.editorState.question.match(/<p>/g) && question.editorState.question.match(/<p>/g).length > 1)||
+    (question.editorState.question.match(/<ol>/g) && question.editorState.question.match(/<ol>/g).length > 1)
+      ) {
     data = await getStack(question.editorState.question, questionCounter);
   } else {
     data = [`${questionCounter}. ${cleanHTML(question.editorState.question)}`];
@@ -519,13 +473,6 @@ async function renderComprehension(question, questionCounter, marks, Type) {
     type: Type,
   };
   return quedata;
-  // return getComprehension(data, detectLanguage(data[0]), marks);
-}
-
-function renderTF(question, questionCounter, marks) {
-  const questionTitle =
-    questionCounter + ". " + cleanHTML(question.editorState.question);
-  return getTF(questionTitle, detectLanguage(questionTitle[0]), marks);
 }
 
 async function renderMTF(question, questionCounter, marks, Type) {
@@ -538,9 +485,7 @@ async function renderMTF(question, questionCounter, marks, Type) {
   );
 
   const heading = questionCounter + ". " + cleanHTML($("p").first().text());
-  console.log("MTF:", heading);
   data.push(heading, detectLanguage(heading), marks);
-  // console.log("MTF:",transposeColumns)
   data.push(
     getMTFHeader(
       cleanHTML(transposeColumns[0][0]),

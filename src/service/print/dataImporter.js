@@ -8,7 +8,7 @@ class PDFDataImportError {
   }
 }
 
-function getItemsFromItemset(itemsetID) {
+function getItemsFromItemset(itemsetID,marks) {
   let status;
   const urlItemset = `${envVariables.baseURL}/action/itemset/v3/read/${itemsetID}`;
   return fetch(urlItemset)
@@ -20,7 +20,7 @@ function getItemsFromItemset(itemsetID) {
       if (status === 200) {
         if (r.result.itemset.items.length > 0) {
           const item = r.result.itemset.items[0];
-          return getQuestionFromItem(item.identifier);
+          return getQuestionFromItem(item.identifier,marks);
         } else {
           throw new PDFDataImportError("Empty Itemset");
         }
@@ -36,7 +36,7 @@ function getItemsFromItemset(itemsetID) {
     });
 }
 
-function getQuestionFromItem(itemID) {
+function getQuestionFromItem(itemID,marks) {
   let status;
   const urlItem = `${envVariables.baseURL}/action/assessment/v3/items/read/${itemID}`;
   return fetch(urlItem)
@@ -46,7 +46,10 @@ function getQuestionFromItem(itemID) {
     })
     .then((r) => {
       if (status === 200) {
-        if (r.result.assessment_item) return r.result.assessment_item;
+        if (r.result.assessment_item) {
+          r.result.assessment_item.marks = marks
+          return r.result.assessment_item;
+        }
         else throw "Not a valid question";
       } else {
         throw new PDFDataImportError(
@@ -72,7 +75,10 @@ const getQuestionForSection = async (id) => {
       if (status === 200) {
         if (r.result.content.itemSets && r.result.content.itemSets.length > 0) {
           const itemset = r.result.content.itemSets[0];
-          return getItemsFromItemset(itemset.identifier);
+          // console.log("Marks dataImports:", r.result.content.marks)
+          const marks = r.result.content.marks;
+          // return { marks: marks, ...getItemsFromItemset(itemset.identifier) }
+          return getItemsFromItemset(itemset.identifier,marks);
         } else {
           throw new PDFDataImportError("Empty Section");
         }
@@ -120,6 +126,7 @@ const getData = async (id) => {
         else return [];
       }); // Hierarchy
 
+      // question_ids=[[s1.q1.id , s1.q2.id],[s2.q1.id, s2.q2.id]]
       const promiseMap = questionIds.map((sec) =>
         sec.map((question) =>
           getQuestionForSection(question).then((resp) => {
