@@ -8,7 +8,7 @@ class PDFDataImportError {
   }
 }
 
-function getItemsFromItemset(itemsetID,marks) {
+function getItemsFromItemset(itemsetID, marks) {
   let status;
   const urlItemset = `${envVariables.baseURL}/action/itemset/v3/read/${itemsetID}`;
   return fetch(urlItemset)
@@ -20,7 +20,7 @@ function getItemsFromItemset(itemsetID,marks) {
       if (status === 200) {
         if (r.result.itemset.items.length > 0) {
           const item = r.result.itemset.items[0];
-          return getQuestionFromItem(item.identifier,marks);
+          return getQuestionFromItem(item.identifier, marks);
         } else {
           throw new PDFDataImportError("Empty Itemset");
         }
@@ -36,7 +36,7 @@ function getItemsFromItemset(itemsetID,marks) {
     });
 }
 
-function getQuestionFromItem(itemID,marks) {
+function getQuestionFromItem(itemID, marks) {
   let status;
   const urlItem = `${envVariables.baseURL}/action/assessment/v3/items/read/${itemID}`;
   return fetch(urlItem)
@@ -47,10 +47,9 @@ function getQuestionFromItem(itemID,marks) {
     .then((r) => {
       if (status === 200) {
         if (r.result.assessment_item) {
-          r.result.assessment_item.marks = marks
+          r.result.assessment_item.marks = marks;
           return r.result.assessment_item;
-        }
-        else throw "Not a valid question";
+        } else throw "Not a valid question";
       } else {
         throw new PDFDataImportError(
           "Invalid Response for Question ID :: " + itemID
@@ -75,10 +74,8 @@ const getQuestionForSection = async (id) => {
       if (status === 200) {
         if (r.result.content.itemSets && r.result.content.itemSets.length > 0) {
           const itemset = r.result.content.itemSets[0];
-          // console.log("Marks dataImports:", r.result.content.marks)
           const marks = r.result.content.marks;
-          // return { marks: marks, ...getItemsFromItemset(itemset.identifier) }
-          return getItemsFromItemset(itemset.identifier,marks);
+          return getItemsFromItemset(itemset.identifier, marks);
         } else {
           throw new PDFDataImportError("Empty Section");
         }
@@ -92,7 +89,7 @@ const getQuestionForSection = async (id) => {
       error = true;
       if (e.name === "PDFDataImportError");
       else e.message = "Uncaught Exception";
-      let errorMsg = e.message
+      let errorMsg = e.message;
       return {
         error,
         errorMsg,
@@ -113,7 +110,6 @@ const getData = async (id) => {
       else {
         throw new PDFDataImportError("Invalid ID");
       }
-
       const questionIds = sections.map((section) => {
         if (section.children)
           return section.children
@@ -136,7 +132,6 @@ const getData = async (id) => {
           })
         )
       );
-
       const questionPromises = promiseMap.map((sectionPromise, index) =>
         Promise.all(sectionPromise)
           .then((result) => result)

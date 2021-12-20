@@ -108,9 +108,17 @@ function create(data, paperData) {
                 let page = 1;
                 if (question[0].type === "COMPREHENSION") {
                   let count = 0;
-                  arr.push(Marks(question));
+                  // arr.push(Marks(question));
                   question[0].Questions.map((item) => {
-                    arr.push(createSAObject(item, count++));
+                    arr.push(
+                      formatview(
+                        item,
+                        count,
+                        question[0].QuestionIndex,
+                        question[0].Marks
+                      )
+                    );
+                    count++;
                   });
 
                   arr.push(
@@ -120,9 +128,17 @@ function create(data, paperData) {
                   );
                 } else if (question[0].type === "CuriosityQuestion") {
                   let count = 0;
-                  arr.push(Marks(question));
+                  // arr.push(Marks(question));
                   question[0].Questions.map((item) => {
-                    arr.push(createSAObject(item, count++));
+                    arr.push(
+                      formatview(
+                        item,
+                        count,
+                        question[0].QuestionIndex,
+                        question[0].Marks
+                      )
+                    );
+                    count++;
                   });
 
                   arr.push(
@@ -132,9 +148,17 @@ function create(data, paperData) {
                   );
                 } else if (question[0].type === "SA") {
                   let count = 0;
-                  arr.push(Marks(question));
+                  // arr.push(Marks(question));
                   question[0].Questions.map((item) => {
-                    arr.push(createSAObject(item, count++));
+                    arr.push(
+                      formatview(
+                        item,
+                        count,
+                        question[0].QuestionIndex,
+                        question[0].Marks
+                      )
+                    );
+                    count++;
                   });
 
                   arr.push(
@@ -144,9 +168,17 @@ function create(data, paperData) {
                   );
                 } else if (question[0].type === "LA") {
                   let count = 0;
-                  arr.push(Marks(question));
+                  // arr.push(Marks(question));
                   question[0].Questions.map((item) => {
-                    arr.push(createSAObject(item, count));
+                    arr.push(
+                      formatview(
+                        item,
+                        count,
+                        question[0].QuestionIndex,
+                        question[0].Marks
+                      )
+                    );
+                    count++;
                   });
                   arr.push(
                     new Paragraph({
@@ -155,9 +187,17 @@ function create(data, paperData) {
                   );
                 } else if (question[0].type === "VSA") {
                   let count = 0;
-                  arr.push(Marks(question));
+                  // arr.push(Marks(question));
                   question[0].Questions.map((item) => {
-                    arr.push(createSAObject(item, count));
+                    arr.push(
+                      formatview(
+                        item,
+                        count,
+                        question[0].QuestionIndex,
+                        question[0].Marks
+                      )
+                    );
+                    count++;
                   });
                   arr.push(
                     new Paragraph({
@@ -166,13 +206,22 @@ function create(data, paperData) {
                   );
                 } else if (question[0].type === "FTB") {
                   let count = 0;
-                  arr.push(Marks(question));
+                  // arr.push(Marks(question));
                   question[0].Questions.map((item) => {
-                    if (typeof item === "object") {
-                      arr.push(createFTBObject(item));
-                    } else {
-                      arr.push(createFTB(item, count++));
-                    }
+                    arr.push(
+                      formatview(
+                        item,
+                        count,
+                        question[0].QuestionIndex,
+                        question[0].Marks
+                      )
+                    );
+                    count++;
+                    // if (typeof item === "object") {
+                    //   arr.push(createFTBObject(item));
+                    // } else {
+                    //   arr.push(createFTB(item, count++));
+                    // }
                   });
                   arr.push(
                     new Paragraph({
@@ -181,16 +230,25 @@ function create(data, paperData) {
                   );
                 } else if (question[0].type === "MCQ") {
                   let testimage = formatOptions(question[0]);
-                  arr.push(Marks(question));
+                  // arr.push(Marks(question));
                   let count = 0;
                   question[0].Questions.map((item) => {
-                    arr.push(createSAObject(item, count));
+                    arr.push(
+                      formatview(
+                        item,
+                        count,
+                        question[0].QuestionIndex,
+                        question[0].Marks
+                      )
+                    );
+                    count++;
                   });
                   arr.push(
                     new Paragraph({
                       children: [], // Just newline without text
                     })
                   );
+                  // arr.push(formatview(testimage,count,"table"))
                   arr.push(optionsTabel(testimage));
                   arr.push(
                     new Paragraph({
@@ -198,16 +256,24 @@ function create(data, paperData) {
                     })
                   );
                 } else if (question[0].type === "MTF") {
-                  arr.push(Marks(question));
+                  // arr.push(Marks(question));
 
                   let count = 0;
-                  arr.push(createSAObject(question[0].heading, count));
+                  arr.push(
+                    formatview(
+                      question[0].heading,
+                      count,
+                      question[0].QuestionIndex,
+                      question[0].Marks
+                    )
+                  );
                   arr.push(
                     new Paragraph({
                       children: [], // Just newline without text
                     })
                   );
-                  arr.push(MTFTabel(question));
+                  // arr.push(MTFTabel(question));
+                  arr.push(mtfTableData(question));
                   arr.push(
                     new Paragraph({
                       children: [], // Just newline without text
@@ -267,13 +333,13 @@ function displayMTFHeader(data) {
   return new TableCell({
     borders: MTFborder,
     width: {
-      size: 100 / 2,
-      type: WidthType.PERCENTAGE,
+      size: 4535,
+      type: WidthType.DXA,
     },
     margins: {
       top: convertInchesToTwip(0.0693701),
       bottom: convertInchesToTwip(0.0693701),
-      left: convertInchesToTwip(0.0693701),
+      left: convertInchesToTwip(0.3493701),
       right: convertInchesToTwip(0.0693701),
     },
     verticalAlign: VerticalAlign.CENTER,
@@ -290,13 +356,13 @@ function displayMTFData(data) {
   return new TableCell({
     borders: MTFborder,
     width: {
-      size: 100 / 2,
-      type: WidthType.PERCENTAGE,
+      size: 4535,
+      type: WidthType.DXA,
     },
     margins: {
       top: convertInchesToTwip(0.0693701),
       bottom: convertInchesToTwip(0.0693701),
-      left: convertInchesToTwip(0.0693701),
+      left: convertInchesToTwip(0.3493701),
       right: convertInchesToTwip(0.0693701),
     },
     verticalAlign: VerticalAlign.CENTER,
@@ -313,12 +379,15 @@ function MTFTabel(question) {
   question[0].Questions.map((item) => {
     arr.push(
       new TableRow({
+        // indent: {
+        //   left:600,
+        // },
         children: [displayMTFData(item.left[0]), displayMTFData(item.right[0])],
       })
     );
   });
   return new Table({
-    columnWidths: [4505, 4505],
+    columnWidths: [5000, 5000],
     rows: arr,
   });
 }
@@ -588,6 +657,29 @@ const MTFborder = {
     size: 2,
   },
 };
+
+const MCQborder = {
+  left: {
+    style: BorderStyle.NONE,
+    size: 0,
+    color: "ffffff",
+  },
+  right: {
+    style: BorderStyle.NONE,
+    size: 0,
+    color: "ffffff",
+  },
+  top: {
+    style: BorderStyle.NONE,
+    size: 0,
+    color: "ffffff",
+  },
+  bottom: {
+    style: BorderStyle.NONE,
+    size: 0,
+    color: "ffffff",
+  },
+};
 function headers(text1, text2) {
   return new Table({
     columnWidths: [4505, 4505],
@@ -637,43 +729,65 @@ function headers(text1, text2) {
 }
 
 function displayNumber(data) {
-  if (typeof data === "object") {
-    return new TableCell({
-      borders: MTFborder,
-      width: {
-        size: 300,
-        type: WidthType.DXA,
-      },
-      margins: {
-        top: convertInchesToTwip(0.0693701),
-        bottom: convertInchesToTwip(0.0693701),
-        left: convertInchesToTwip(0.0693701),
-        right: convertInchesToTwip(0.0693701),
-      },
-      verticalAlign: VerticalAlign.CENTER,
-      children: [
-        new Paragraph({
-          text: data.text[0].substr(0, 1),
-        }),
-      ],
-    });
+  if (data !== undefined) {
+    if (typeof data === "object") {
+      return new TableCell({
+        borders: MCQborder,
+        width: {
+          size: 650,
+          type: WidthType.DXA,
+        },
+        margins: {
+          top: convertInchesToTwip(0.0693701),
+          bottom: convertInchesToTwip(0.0693701),
+          left: convertInchesToTwip(0.3493701),
+          right: convertInchesToTwip(0.0693701),
+        },
+        verticalAlign: VerticalAlign.CENTER,
+        children: [
+          new Paragraph({
+            text: data.text[0].substr(0, 2),
+          }),
+        ],
+      });
+    } else {
+      return new TableCell({
+        borders: MCQborder,
+        width: {
+          size: 650,
+          type: WidthType.DXA,
+        },
+        margins: {
+          top: convertInchesToTwip(0.0693701),
+          bottom: convertInchesToTwip(0.0693701),
+          left: convertInchesToTwip(0.3493701),
+          right: convertInchesToTwip(0.0693701),
+        },
+        verticalAlign: VerticalAlign.CENTER,
+        children: [
+          new Paragraph({
+            text: data.substr(0, 2),
+          }),
+        ],
+      });
+    }
   } else {
     return new TableCell({
-      borders: MTFborder,
+      borders: MCQborder,
       width: {
-        size: 300,
+        size: 650,
         type: WidthType.DXA,
       },
       margins: {
         top: convertInchesToTwip(0.0693701),
         bottom: convertInchesToTwip(0.0693701),
-        left: convertInchesToTwip(0.0693701),
+        left: convertInchesToTwip(0.3493701),
         right: convertInchesToTwip(0.0693701),
       },
       verticalAlign: VerticalAlign.CENTER,
       children: [
         new Paragraph({
-          text: data.substr(0, 1),
+          text: "",
         }),
       ],
     });
@@ -697,7 +811,7 @@ function displayOptionsObject(data, count) {
       })
       .reduce((prev, curr) => prev.concat(curr), []);
     return new TableCell({
-      borders: MTFborder,
+      borders: MCQborder,
       width: {
         size: 4505,
         type: WidthType.DXA,
@@ -718,57 +832,154 @@ function displayOptionsObject(data, count) {
   }
 }
 function displayOptions(option, height, width) {
-  if (typeof option === "object") {
-    return displayOptionsObject(option);
-  } else if (option.includes("data:image/")) {
-    let image = getBufferData(option);
+  if (option !== undefined) {
+    if (typeof option === "object") {
+      return displayOptionsObject(option);
+    } else if (option.includes("data:image/")) {
+      let image = getBufferData(option);
+      return new TableCell({
+        borders: MCQborder,
+        width: {
+          size: 4505,
+          type: WidthType.DXA,
+        },
+        margins: {
+          top: convertInchesToTwip(0.0693701),
+          bottom: convertInchesToTwip(0.0693701),
+          left: convertInchesToTwip(0.0693701),
+          right: convertInchesToTwip(0.0693701),
+        },
+        verticalAlign: VerticalAlign.CENTER,
+        children: [
+          new Paragraph({
+            children: [
+              new ImageRun({
+                data: image,
+                transformation: {
+                  width: width,
+                  height: height,
+                },
+              }),
+            ],
+          }),
+        ],
+      });
+    } else {
+      return new TableCell({
+        borders: MCQborder,
+        width: {
+          size: 4505,
+          type: WidthType.DXA,
+        },
+        margins: {
+          top: convertInchesToTwip(0.0693701),
+          bottom: convertInchesToTwip(0.0693701),
+          left: convertInchesToTwip(0.0693701),
+          right: convertInchesToTwip(0.0693701),
+        },
+        verticalAlign: VerticalAlign.CENTER,
+        children: [
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: option.substr(2),
+              }),
+            ],
+          }),
+        ],
+      });
+    }
+  } else {
     return new TableCell({
-      borders: MTFborder,
+      borders: MCQborder,
       width: {
-        size: 4505,
+        size: 650,
         type: WidthType.DXA,
       },
       margins: {
         top: convertInchesToTwip(0.0693701),
         bottom: convertInchesToTwip(0.0693701),
-        left: convertInchesToTwip(0.0693701),
+        left: convertInchesToTwip(0.3493701),
         right: convertInchesToTwip(0.0693701),
       },
       verticalAlign: VerticalAlign.CENTER,
       children: [
         new Paragraph({
+          text: "",
+        }),
+      ],
+    });
+  }
+}
+function displayViewData(data) {
+  return new TableCell({
+    borders: MCQborder,
+    width: {
+      size: 8000,
+      type: WidthType.DXA,
+    },
+    verticalAlign: VerticalAlign.LEFT,
+    children: [createSAObject(data, 0)],
+  });
+}
+
+function displayQueNum(data) {
+  return new TableCell({
+    borders: MCQborder,
+    width: {
+      size: 500,
+      type: WidthType.DXA,
+    },
+    verticalAlign: VerticalAlign.LEFT,
+    children: [createSAObject(data, 0)],
+  });
+}
+
+function displayMarks(data) {
+  return new TableCell({
+    borders: MCQborder,
+    width: {
+      size: 500,
+      type: WidthType.DXA,
+    },
+    margins: {
+      left: convertInchesToTwip(0.3493701),
+    },
+    verticalAlign: VerticalAlign.LEFT,
+    children: [createSAObject(data, 0)],
+  });
+}
+function formatview(data, count, questionCounter, marks) {
+  if (count === 0) {
+    return new Table({
+      borders: MCQborder,
+      columnWidths: [300, 10000, 300],
+      rows: [
+        new TableRow({
+          indent: {
+            left: 100,
+          },
           children: [
-            new ImageRun({
-              data: image,
-              transformation: {
-                width: width,
-                height: height,
-              },
-            }),
+            displayQueNum(questionCounter),
+            displayViewData(data),
+            displayMarks(marks),
           ],
         }),
       ],
     });
   } else {
-    return new TableCell({
-      borders: MTFborder,
-      width: {
-        size: 4505,
-        type: WidthType.DXA,
-      },
-      margins: {
-        top: convertInchesToTwip(0.0693701),
-        bottom: convertInchesToTwip(0.0693701),
-        left: convertInchesToTwip(0.0693701),
-        right: convertInchesToTwip(0.0693701),
-      },
-      verticalAlign: VerticalAlign.CENTER,
-      children: [
-        new Paragraph({
+    return new Table({
+      borders: MCQborder,
+      columnWidths: [300, 10000, 300],
+      rows: [
+        new TableRow({
+          indent: {
+            left: 100,
+          },
           children: [
-            new TextRun({
-              text: option.substr(2),
-            }),
+            displayQueNum(""),
+            displayViewData(data),
+            displayMarks(""),
           ],
         }),
       ],
@@ -776,13 +987,30 @@ function displayOptions(option, height, width) {
   }
 }
 
+function mtfTableData(data) {
+  const cell = new TableCell({
+    children: [MTFTabel(data)],
+  });
+
+  return new Table({
+    borders: MCQborder,
+    columnWidths: [300, 10000, 300],
+    rows: [
+      new TableRow({
+        children: [displayQueNum(""), cell, displayMarks("")],
+      }),
+    ],
+  });
+}
+
 function optionsTabel(testimage) {
   return new Table({
+    borders: MCQborder,
     columnWidths: [4505, 4505],
     rows: [
       new TableRow({
         indent: {
-          left: 200,
+          left: 600,
         },
         children: [
           displayNumber(testimage[0]),
@@ -796,7 +1024,7 @@ function optionsTabel(testimage) {
       }),
       new TableRow({
         indent: {
-          left: 200,
+          left: 600,
         },
         children: [
           displayNumber(testimage[2]),
