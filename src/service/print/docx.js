@@ -54,7 +54,7 @@ const buildDOCXWithCallback = async (id, callback) => {
             switch (question.category) {
               case "MCQ":
                 questionContent = [
-                  await renderMCQ(question, questionCounter, question.marks),
+                  await renderMCQ(question, questionCounter, question.marks,),
                 ];
                 break;
               case "FTB":
@@ -98,12 +98,13 @@ const buildDOCXWithCallback = async (id, callback) => {
                 ];
                 break;
               case "MTF":
-                questionContent = await renderMTF(
+                questionContent = [await renderMTF(
                   question,
                   questionCounter,
                   question.marks,
                   "MTF"
-                );
+                ),
+                ];
                 break;
               case "COMPREHENSION":
                 questionContent = [
