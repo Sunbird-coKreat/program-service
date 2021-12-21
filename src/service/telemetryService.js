@@ -17,22 +17,33 @@ function initTelemetry() {
 }
 
 function generateAuditEvent(DBinstance, model, action) {
-    const event = {};
-        event['context'] = {
-           pdata: telemetryEventConfig.pdata,
-           env: model.name,
-           channel: ''
+    const event = {
+        "eid": "AUDIT",
+        "ets": 1592803822,
+        "ver": "3.0",
+        "mid": "PRG.AUDIT.1592803822",
+        "actor": {
+            "id": "System",
+            "type": "User"
         }
-        event['edata'] = {
-            state: DBinstance.status || '',
-            prevstate: action === 'create' ? '' : DBinstance.previous().status || DBinstance.status,
-            props: _.keys(DBinstance.previous())
-        }
-        event['object'] = {
-           id: DBinstance[model.primaryKeyAttributes[0]] || '',
-           type: model.name
-        }
-        logger.info({ msg: 'Audit Event', event})
+    };
+    event['context'] = {
+        pdata: telemetryEventConfig.pdata,
+        env: model.name,
+        channel: envVariables.DOCK_CHANNEL || "sunbird",
+    }
+    event['edata'] = {
+        type: action,
+        state: DBinstance.status || '',
+        prevstate: action === 'create' ? '' : DBinstance.previous().status || DBinstance.status,
+        props: _.keys(DBinstance.previous())
+    }
+    event['object'] = {
+        id: _.get(DBinstance, 'dataValues.program_id') || DBinstance[model.primaryKeyAttributes[0]] || '',
+        type: model.name,
+        rollup: {}
+    }
+    logger.info({ msg: 'Audit Event', event })
     telemetryInstance.audit(event);
 }
 

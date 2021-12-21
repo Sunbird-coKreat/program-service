@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@project-sunbird/telemetry-sdk": "0.0.24",
+    "async": "^3.2.1",
     "axios": "^0.19.2",
     "better-config": "^1.2.3",
     "bluebird": "^3.7.2",
@@ -28,6 +29,8 @@
     "express-cluster": "0.0.5",
     "express-fileupload": "^1.2.1",
     "express-validator": "^6.6.1",
+    "form-data": "^4.0.0",
+    "googleapis": "^88.2.0",
     "helmet": "^3.23.1",
     "http-errors": "^1.6.3",
     "image-size": "^0.9.7",
@@ -37,6 +40,7 @@
     "lodash": "^4.17.15",
     "morgan": "~1.9.1",
     "node-fetch": "2.6.1",
+    "papaparse": "^5.3.1",
     "pdfmake": "^0.1.70",
     "pg": "^7.18.2",
     "redis": "^3.0.2",
@@ -54,7 +58,9 @@
     "sb_telemetry_util": "file:libs/sb_telemetry_util",
     "sequelize": "^5.21.5",
     "underscore": "^1.9.2",
-    "uuid": "^3.2.1"
+    "uuid": "^3.2.1",
+    "utf8": "^3.0.0",
+    "xhr2": "^0.2.1"
   },
   "devDependencies": {
     "chai": "^4.2.0",
