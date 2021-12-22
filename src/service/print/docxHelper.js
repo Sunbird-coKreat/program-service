@@ -148,7 +148,7 @@ function getStyleEle(el) {
     }
   }
 }
-async function getStack(htmlString, questionCounter) {
+async function getStack(htmlString) {
   const stack = [];
   $ = cheerio.load(htmlString);
   const elems = $("body").children().toArray();
@@ -206,8 +206,7 @@ async function getStack(htmlString, questionCounter) {
 }
 
 async function renderMCQ(question, questionCounter, marks) {
-  const questionOptions = [],
-    answerOptions = ["A", "B", "C", "D"];
+  const questionOptions = []
   let questionTitle;
   for (const [index, qo] of question.editorState.options.entries()) {
     let qoBody = qo.value.body;
@@ -217,7 +216,7 @@ async function renderMCQ(question, questionCounter, marks) {
       qoBody.search("sub") >= 0 ||
       (qoBody.match(/<p>/g) && qoBody.match(/<p>/g).length >= 1) ||
       (qoBody.match(/<ol>/g) && qoBody.match(/<ol>/g).length >= 1)
-        ? await getStack(qoBody, answerOptions[index])
+        ? await getStack(qoBody)
         : [`${cleanHTML(qoBody)}`];
     questionOptions.push(qoData);
   }
@@ -240,14 +239,14 @@ async function renderMCQ(question, questionCounter, marks) {
       typeof questionOptions[0][1] === "object"
     ) {
       questionOpt.push(
-        "A." + questionOptions[0][0] + questionOptions[0][1].image
+        "I." + questionOptions[0][0] + questionOptions[0][1].image
       );
       imageProperties.push({
         width: questionOptions[0][1].width,
         height: questionOptions[0][1].height,
       });
     } else {
-      questionOpt.push("A." + questionOptions[0][0]);
+      questionOpt.push("I." + questionOptions[0][0]);
       imageProperties.push({
         width: 0,
         height: 0,
@@ -261,14 +260,14 @@ async function renderMCQ(question, questionCounter, marks) {
       typeof questionOptions[1][1] === "object"
     ) {
       questionOpt.push(
-        "B." + questionOptions[1][0] + questionOptions[1][1].image
+        "II." + questionOptions[1][0] + questionOptions[1][1].image
       );
       imageProperties.push({
         width: questionOptions[1][1].width,
         height: questionOptions[1][1].height,
       });
     } else {
-      questionOpt.push("B." + questionOptions[1][0]);
+      questionOpt.push("II." + questionOptions[1][0]);
       imageProperties.push({
         width: 0,
         height: 0,
@@ -282,14 +281,14 @@ async function renderMCQ(question, questionCounter, marks) {
       typeof questionOptions[2][1] === "object"
     ) {
       questionOpt.push(
-        "C." + questionOptions[2][0] + questionOptions[2][1].image
+        "III." + questionOptions[2][0] + questionOptions[2][1].image
       );
       imageProperties.push({
         width: questionOptions[2][1].width,
         height: questionOptions[2][1].height,
       });
     } else {
-      questionOpt.push("C." + questionOptions[2][0]);
+      questionOpt.push("III." + questionOptions[2][0]);
       imageProperties.push({
         width: 0,
         height: 0,
@@ -303,14 +302,14 @@ async function renderMCQ(question, questionCounter, marks) {
       typeof questionOptions[3][1] === "object"
     ) {
       questionOpt.push(
-        "D." + questionOptions[3][0] + questionOptions[3][1].image
+        "IV." + questionOptions[3][0] + questionOptions[3][1].image
       );
       imageProperties.push({
         width: questionOptions[3][1].width,
         height: questionOptions[3][1].height,
       });
     } else {
-      questionOpt.push("D." + questionOptions[3][0]);
+      questionOpt.push("IV." + questionOptions[3][0]);
       imageProperties.push({
         width: 0,
         height: 0,

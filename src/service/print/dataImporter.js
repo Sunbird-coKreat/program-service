@@ -1,10 +1,10 @@
 const fetch = require("node-fetch");
 const envVariables = require("../../envVariables");
 
-class PDFDataImportError {
+class MigrationDataImportError {
   constructor(message) {
     this.message = message;
-    this.name = "PDFDataImportError";
+    this.name = "MigrationDataImportError";
   }
 }
 
@@ -22,17 +22,23 @@ function getItemsFromItemset(itemsetID, marks) {
           const item = r.result.itemset.items[0];
           return getQuestionFromItem(item.identifier, marks);
         } else {
-          throw new PDFDataImportError("Empty Itemset");
+          throw new MigrationDataImportError("Empty Itemset");
         }
       } else {
-        throw new PDFDataImportError(
+        throw new MigrationDataImportError(
           "Invalid Response for Itemset ID :: " + itemsetID
         );
       }
     })
     .catch((e) => {
-      if (e.name === "PDFDataImportError") throw e;
-      else throw new PDFDataImportError("Invalid Response for Itemset API");
+      error = true;
+      if (e.name === "MigrationDataImportError");
+      else e.message = "Uncaught Exception";
+      let errorMsg = e.message;
+      return {
+        error,
+        errorMsg,
+      };
     });
 }
 
@@ -51,14 +57,20 @@ function getQuestionFromItem(itemID, marks) {
           return r.result.assessment_item;
         } else throw "Not a valid question";
       } else {
-        throw new PDFDataImportError(
+        throw new MigrationDataImportError(
           "Invalid Response for Question ID :: " + itemID
         );
       }
     })
     .catch((e) => {
-      if (e.name === "PDFDataImportError") throw e;
-      else throw new PDFDataImportError("Invalid Response for Question API");
+      error = true;
+      if (e.name === "MigrationDataImportError");
+      else e.message = "Uncaught Exception";
+      let errorMsg = e.message;
+      return {
+        error,
+        errorMsg,
+      };
     });
 }
 
@@ -77,17 +89,17 @@ const getQuestionForSection = async (id) => {
           const marks = r.result.content.marks;
           return getItemsFromItemset(itemset.identifier, marks);
         } else {
-          throw new PDFDataImportError("Empty Section");
+          throw new MigrationDataImportError("Empty Section");
         }
       } else {
-        throw new PDFDataImportError(
+        throw new MigrationDataImportError(
           "Invalid Response for Hierarchy ID :: " + id
         );
       }
     })
     .catch((e) => {
       error = true;
-      if (e.name === "PDFDataImportError");
+      if (e.name === "MigrationDataImportError");
       else e.message = "Uncaught Exception";
       let errorMsg = e.message;
       return {
@@ -108,7 +120,7 @@ const getData = async (id) => {
       let sections;
       if (data && "children" in data) sections = data.children;
       else {
-        throw new PDFDataImportError("Invalid ID");
+        throw new MigrationDataImportError("Invalid ID");
       }
       const questionIds = sections.map((section) => {
         if (section.children)
@@ -127,7 +139,7 @@ const getData = async (id) => {
         sec.map((question) =>
           getQuestionForSection(question).then((resp) => {
             if (resp.error) {
-              throw new PDFDataImportError(resp.errorMsg);
+              throw new MigrationDataImportError(resp.errorMsg);
             } else return resp;
           })
         )
@@ -157,7 +169,7 @@ const getData = async (id) => {
     .catch((e) => {
       console.log(e);
       error = true;
-      if (e.name === "PDFDataImportError") errorMsg = e.message;
+      if (e.name === "MigrationDataImportError") errorMsg = e.message;
       else errorMsg = "Uncaught Exception";
       return {
         error,

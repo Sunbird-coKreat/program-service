@@ -46,7 +46,6 @@ const buildDOCX_1_WithCallback = async (id, callback) => {
           for (const [index, question] of d.questions.entries()) {
             //later remove this if condition
             if (question !== undefined) {
-              console.log("Question:", question.qType);
 
               questionCounter += 1;
 
@@ -143,7 +142,6 @@ const buildDOCX_1_WithCallback = async (id, callback) => {
       }
     })
     .catch((e) => {
-      console.log(e);
       error = true;
       errorMsg = "";
       callback(null, error, errorMsg);

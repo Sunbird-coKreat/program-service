@@ -731,6 +731,8 @@ function headers(text1, text2) {
 function displayNumber(data) {
   if (data !== undefined) {
     if (typeof data === "object") {
+      let text= data.text[0].split(".")
+      console.log("Text:",text)
       return new TableCell({
         borders: MCQborder,
         width: {
@@ -746,11 +748,13 @@ function displayNumber(data) {
         verticalAlign: VerticalAlign.CENTER,
         children: [
           new Paragraph({
-            text: data.text[0].substr(0, 2),
+            text: text[0]+".",
           }),
         ],
       });
     } else {
+      let text= data.split(".")
+      console.log("Text:",text)
       return new TableCell({
         borders: MCQborder,
         width: {
@@ -766,7 +770,7 @@ function displayNumber(data) {
         verticalAlign: VerticalAlign.CENTER,
         children: [
           new Paragraph({
-            text: data.substr(0, 2),
+            text: text[0]+".",
           }),
         ],
       });
@@ -865,7 +869,8 @@ function displayOptions(option, height, width) {
         ],
       });
     } else {
-      return new TableCell({
+      let text= option.split(".")
+      return new TableCell({    
         borders: MCQborder,
         width: {
           size: 4505,
@@ -882,7 +887,7 @@ function displayOptions(option, height, width) {
           new Paragraph({
             children: [
               new TextRun({
-                text: option.substr(2),
+                text: text[1],
               }),
             ],
           }),
@@ -1009,9 +1014,7 @@ function optionsTabel(testimage) {
     columnWidths: [4505, 4505],
     rows: [
       new TableRow({
-        indent: {
-          left: 600,
-        },
+        
         children: [
           displayNumber(testimage[0]),
 

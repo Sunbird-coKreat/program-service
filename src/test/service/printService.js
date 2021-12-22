@@ -6,7 +6,7 @@ const chaiHttp = require("chai-http");
 chai.use(chaiHttp);
 const { expect } = chai;
 chai.use(require("chai-sorted"));
-chai.use(require("chai-match"));
+chai.use(require("chai-match"))
 const _ = require("lodash");
 
 const programData = require("../testData/program.json");
@@ -71,7 +71,8 @@ describe("Print Service", () => {
   it("[Integration test] should throw DocxDataImportError from itemset for incorrect itemset ID", (done) => {
     getItemsFromItemset("any")
       .then((response) => {
-        expect(response).to.not.be.undefined;
+        expect(response.error).to.be.equal(true);
+        done()
       })
       .catch((e) => {
         expect(e.name).to.equal("DocxDataImportError");
@@ -83,6 +84,7 @@ describe("Print Service", () => {
   it("[Integration test] should throw DocxDataImportError for incorrect item ID", (done) => {
     getQuestionFromItem("any")
       .then((response) => {
+        expect(response.error).to.be.equal(true);
         done();
       })
       .catch((e) => {
@@ -104,8 +106,7 @@ describe("Print Service", () => {
   });
 
   it("[Integration test] should getData for correct Hierarchy ID", (done) => {
-    dataImporter
-      .getData("do_11341790341271552011559")
+   getData("do_11341790341271552011559")
       .then((response) => {
         expect(response).to.not.be.undefined;
         expect(response).to.have.property("paperData");
@@ -126,8 +127,8 @@ describe("Print Service", () => {
     docx.buildDOCXWithCallback(
       "do_11341790341271552011559",
       (base64, error, errorMsg) => {
-        expect(error).to.be.false;
-        expect(errorMsg).to.equal("");
+        expect(error).to.be.null;
+        expect(errorMsg).to.be.null;
         done();
       }
     );
@@ -186,50 +187,46 @@ describe("Print Service", () => {
       });
   });
   it("[Integration test] docx1.0 should return and error for incorrect question ID", (done) => {
-    getQuestionForSet("do_11341 847729268326411897")
+    getQuestionForSet("test")
       .then((response) => {
-        expect(response).to.not.be.undefined;
+        expect(response.error).to.be.equal(true);
         done();
       })
       .catch((e) => {
         expect(e.name).to.equal("DocxDataImportError");
-        expect(e.message).to.equal("Invalid Response for Itemset ID :: any");
         done();
       });
   });
 
-  it("[Integration test] docx1.0 should getData for correct Hierarchy ID", (done) => {
-    dataImporter1
-      .getQuestionSet("do_113431918093377536172")
+  it("[Integration test] docx1.0 should getQuestionSet for correct Hierarchy ID", (done) => {
+    getQuestionSet("do_113431918093377536172")
       .then((response) => {
         expect(response).to.not.be.undefined;
         expect(response).to.have.property("paperData");
         expect(response).to.have.property("sectionData");
         expect(response.sectionData).to.be.an("Array");
         expect(response.sectionData[0].questions).to.be.an("Array");
-        expect(response).to.have.property("error");
-        expect(response.error).to.be.false;
         done();
       })
       .catch((e) => {
         done(e);
       });
   });
-  it("[Integration test] should return a docx for correct Hierarchy ID", (done) => {
+  it("[Integration test] should return a docx1.0 for correct Hierarchy ID", (done) => {
     docx1.buildDOCX_1_WithCallback(
       "do_113431918093377536172",
       (base64, error, errorMsg) => {
-        expect(error).to.be.false;
-        expect(errorMsg).to.equal("");
+        expect(error).to.be.null;
+        expect(errorMsg).to.equal(null);
         done();
       }
     );
   });
 
   it("[Integration test] should return a an error for incorrect Hierarchy ID", (done) => {
-    docx.buildDOCX_1_WithCallback("any", (base64, error, errorMsg) => {
+    docx1.buildDOCX_1_WithCallback("any", (base64, error, errorMsg) => {
       expect(error).to.be.true;
-      expect(errorMsg).to.equal("Invalid ID");
+      expect(errorMsg).to.equal("");
       done();
     });
   });

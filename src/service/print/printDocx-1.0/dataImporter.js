@@ -22,7 +22,12 @@ const getQuestionForSet = async (id) => {
 
   return axios(request).then((r) => {
     return r.data.result.question;
-  });
+  }).catch((e)=>{
+    return{
+      error:true,
+      errormsg:"wrong ID"
+    }
+  })
 };
 const getQuestionSet = async (id) => {
   const headers = {
