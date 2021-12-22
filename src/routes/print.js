@@ -1,5 +1,6 @@
 var express = require("express");
 const { buildDOCXWithCallback } = require('../service/print/docx')
+
 const { buildDOCX_1_WithCallback } = require('../service/print/printDocx-1.0/docx')
 
 const requestMiddleware = require("../middlewares/request.middleware");
@@ -48,6 +49,7 @@ async function printDocx(req,res){
           error: errorMsg,
         }); 
       }
+
     });
   } else {
   // buildDOCXwithCallback(function (binary, error, errorMsg) {
@@ -81,6 +83,7 @@ async function printDocx(req,res){
         res.setHeader('Content-Disposition', `attachment; filename=${filename}.docx`);
         res.send(Buffer.from(binary, 'base64'));
       }
+
     } else {
       res.status(404).send({
         error: errorMsg,
@@ -88,6 +91,7 @@ async function printDocx(req,res){
     }
   });
 }
+
 }
 
 // async function printxml(req,res){
@@ -131,6 +135,7 @@ async function printDocx(req,res){
 //     }
 //   });
 // }
+
 
 
 
