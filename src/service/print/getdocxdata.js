@@ -732,7 +732,6 @@ function displayNumber(data) {
   if (data !== undefined) {
     if (typeof data === "object") {
       let text= data.text[0].split(".")
-      console.log("Text:",text)
       return new TableCell({
         borders: MCQborder,
         width: {
@@ -754,7 +753,6 @@ function displayNumber(data) {
       });
     } else {
       let text= data.split(".")
-      console.log("Text:",text)
       return new TableCell({
         borders: MCQborder,
         width: {

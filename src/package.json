@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "start": "node app.js",
-    "test": "mocha 'test/**/*.js'",
+    "test": "mocha 'test/service/printService.js'",
     "test-print": "mocha 'test/service/printService.js'",
     "test-with-coverage": "nyc --reporter=lcov --reporter=text-lcov mocha test/**/*.js --exit --timeout 20000"
   },
   "dependencies": {
     "@project-sunbird/telemetry-sdk": "0.0.24",
+    "async": "^3.2.1",
     "async-csv": "^2.1.3",
     "axios": "^0.19.2",
     "better-config": "^1.2.3",
@@ -30,6 +31,8 @@
     "express-csv": "0.6.0",
     "express-fileupload": "^1.2.1",
     "express-validator": "^6.6.1",
+    "form-data": "^4.0.0",
+    "googleapis": "^88.2.0",
     "fast-csv": "^4.3.6",
     "fast-xml-parser": "^3.20.3",
     "helmet": "^3.23.1",
@@ -43,6 +46,7 @@
     "morgan": "~1.9.1",
     "neat-csv": "^7.0.0",
     "node-fetch": "2.6.1",
+    "papaparse": "^5.3.1",
     "pdfmake": "^0.1.70",
     "pg": "^7.18.2",
     "redis": "^3.0.2",
@@ -61,6 +65,8 @@
     "sequelize": "^5.21.5",
     "underscore": "^1.9.2",
     "uuid": "^3.2.1",
+    "utf8": "^3.0.0",
+    "xhr2": "^0.2.1",
     "xmlbuilder": "^15.1.1"
   },
   "devDependencies": {
