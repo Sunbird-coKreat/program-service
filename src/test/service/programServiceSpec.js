@@ -12,8 +12,8 @@ chai.use(chaiHttp);
 const { expect } = chai;
 chai.use(require("chai-sorted"));
 const _ = require("lodash");
-
 const programData = require("../testData/program.json");
+const restrictedProgram = require("../testData/restrictedProgram.json");
 const dummyData = require("../testData/dummyData");
 
 // const host = 'http://localhost:5000'
@@ -23,7 +23,7 @@ const BASE_URL = "/program/v1";
 describe("Program Service", () => {
   let programId;
   let programId2;
-
+  let restrictedProgramId;
   beforeEach(() => {
     nock(envVariables.OPENSABER_SERVICE_URL)
       .post("/search", dummyData.regUserSearch)
@@ -87,6 +87,7 @@ describe("Program Service", () => {
         done();
       });
   });
+
 
   it("it should also create a programs even if rootOrgId is not sent", (done) => {
     const program = { request: programData };
@@ -158,7 +159,7 @@ describe("Program Service", () => {
 
   _.forEach(dummyData.mandatoryFieldsProgramUpdate, (field) => {
     // eslint-disable-next-line no-undef
-    it(`it should not update a program if ${field} is missing`, (done) => {
+    it(`it should not update a program if ${ field } is missing`, (done) => {
       const reqData = JSON.stringify(dummyData.programUpdate);
       const programUpdate = { request: JSON.parse(reqData) };
       programUpdate.request.program_id = programId;
@@ -209,7 +210,7 @@ describe("Program Service", () => {
 
   _.forEach(dummyData.mandatoryFieldsNominationAdd, (field) => {
     // eslint-disable-next-line no-undef
-    it(`it should not add a nomination if ${field} is missing`, (done) => {
+    it(`it should not add a nomination if ${ field } is missing`, (done) => {
       const reqData = JSON.stringify(dummyData.nominationAdd);
       const nominationAdd = { request: JSON.parse(reqData) };
       nominationAdd.request.program_id = programId;
@@ -245,7 +246,7 @@ describe("Program Service", () => {
 
   _.forEach(dummyData.mandatoryFieldsNominationUpdate, (field) => {
     // eslint-disable-next-line no-undef
-    it(`it should not update a nomination if ${field} is missing`, (done) => {
+    it(`it should not update a nomination if ${ field } is missing`, (done) => {
       const reqData = JSON.stringify(dummyData.nominationUpdate);
       const nominationUpdate = { request: JSON.parse(reqData) };
       nominationUpdate.request.program_id = programId;
@@ -631,7 +632,7 @@ describe("Program Service", () => {
       .send({
         request: {
           filters: {
-            nomination:{
+            nomination: {
               user_id: {
                 eq: "cca53828-8111-4d71-9c45-40e569f13bad"
               }
@@ -975,6 +976,42 @@ describe("Program Service", () => {
           expect(res.body.result.programs).to.be.sortedBy("matchCount", {
             descending: true,
           });
+        }
+        done();
+      });
+  });
+
+  // eslint-disable-next-line no-undef
+  it("it should create a programs with restricted contributors", (done) => {
+    chai
+      .request(app)
+      .post(BASE_URL + "/create")
+      .set("Accept", "application/json")
+      .send(restrictedProgram)
+      // eslint-disable-next-line handle-callback-err
+      .end((err, res) => {
+        expect(res.status).to.equal(200);
+        expect(res.body.result).to.have.property("program_id");
+        restrictedProgramId = res.body.result.program_id;
+        done();
+      });
+    });
+
+      // eslint-disable-next-line no-undef
+  it("it should update a program with restricted contributor", (done) => {
+    const programUpdate = dummyData.programRestrictedContrib;
+    programUpdate.request.program_id = restrictedProgramId;
+    chai
+      .request(app)
+      .post(BASE_URL + "/update")
+      .set("Accept", "application/json")
+      .send(programUpdate)
+      // eslint-disable-next-line handle-callback-err
+      .end((err, res) => {
+        if (!programId) {
+          expect(res.status).to.equal(400);
+        } else {
+          expect(res.status).to.equal(200);
         }
         done();
       });

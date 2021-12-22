@@ -53,6 +53,7 @@ sb_logger.init({
   logLevel,
 });
 const app = createAppServer();
+
 app.listen(port, () => {
   console.log(
     `program-service is running in test env on port ${port} with ${process.pid} pid`

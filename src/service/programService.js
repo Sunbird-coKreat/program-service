@@ -20,7 +20,7 @@ const {
   forkJoin
 } = require('rxjs');
 const { catchError , map } = require('rxjs/operators');
-const axios = require('axios');
+const axios = require("axios");
 const envVariables = require('../envVariables');
 const RegistryService = require('./registryService')
 const ProgramServiceHelper = require('../helpers/programHelper');
@@ -211,7 +211,7 @@ function publishProgram(req, response) {
     req.rspObj.errCode = programMessages.PUBLISH.MISSING_CODE
     req.rspObj.errMsg = programMessages.PUBLISH.MISSING_MESSAGE
     req.rspObj.responseCode = responseCode.CLIENT_ERROR
-    loggerError('',req.rspObj,errCode+errorCodes.CODE1);
+    loggerError('',req.rspObj,req.rspObj.errCode+errorCodes.CODE1);
     loggerService.exitLog({responseCode: req.rspObj.responseCode, errCode: req.rspObj.errCode+errorCodes.CODE1}, logObject);
     return response.status(400).send(errorResponse(req.rspObj,req.rspObj.errCode+errorCodes.CODE1))
   }
@@ -419,7 +419,7 @@ function onAfterPublishProgram(programDetails, reqHeaders, afterPublishCallback)
   onPublishResult['nomination']= {};
   onPublishResult['userMapping']= {};
   getUserRegistryDetails(programDetails.createdby).then((userRegData) => {
-    getOsOrgForRootOrgId(programDetails.rootorg_id, userRegData, reqHeaders).then((osOrgforRootOrgRes) => {
+    getOsOrgForRootOrgId(programDetails.rootorg_id, userRegData, reqHeaders).then(async (osOrgforRootOrgRes) => {
       const iforgFoundInRegData = osOrgforRootOrgRes.orgFoundInRegData;
       const osOrgforRootOrg = osOrgforRootOrgRes.osOrgforRootOrg;
       const userOsid = _.get(userRegData, 'User.osid');
@@ -545,11 +545,11 @@ function onAfterPublishProgram(programDetails, reqHeaders, afterPublishCallback)
             afterPublishCallback(onPublishResult);
           }
         }
+        const dikshaUserProfilesApiResp = await userService.getDikshaUserProfiles({'headers': reqHeaders}, programDetails.createdby);
+        let orgUsersDetails = _.get(dikshaUserProfilesApiResp.data, 'result.response.content');
         // create a registry for the user adn then an org and create mapping for the org as a admin
-        programServiceHelper.getUserDetails(programDetails.createdby, reqHeaders)
-        .subscribe((res)=> {
-          if (res.data.responseCode == "OK" && !_.isEmpty(_.get(res.data, 'result.response.content'))) {
-            const userDetails = _.first(_.get(res.data, 'result.response.content'));
+          if (orgUsersDetails) {
+            const userDetails = _.first(orgUsersDetails);
             if (!userOsid && !_.isEmpty(osOrgforRootOrg)) {
               // if user for created by is not present but org for rootOrg id exists
               createUserMappingInRegistry(userDetails, osOrgforRootOrg, regMethodCallback);
@@ -564,10 +564,6 @@ function onAfterPublishProgram(programDetails, reqHeaders, afterPublishCallback)
             onPublishResult['error'] = {msg: "error while getting users details from Diksha"};
             afterPublishCallback(onPublishResult);
           }
-        },(error)=> {
-          onPublishResult['error'] = {msg: "error while getting users details from Diksha " + error.message};
-          afterPublishCallback(onPublishResult);
-        });
       }
     })
     .catch((error) => {
@@ -756,11 +752,10 @@ function createOrgMappingInRegistry(userProfile, userReg, regMethodCallback) {
 
 function addOrUpdateNomination(programDetails, user_id, orgosid) {
   return new Promise((resolve, reject) => {
-    if (orgosid) {
       const insertObj = {
         program_id: programDetails.program_id,
         user_id: user_id,
-        organisation_id: orgosid,
+        organisation_id: orgosid || null,
         status: 'Approved',
         collection_ids: programDetails.copiedCollections,
       };
@@ -771,9 +766,17 @@ function addOrUpdateNomination(programDetails, user_id, orgosid) {
         insertObj['content_types'] = programDetails.content_types;
       }
       let findNomWhere =  {
-        program_id: programDetails.program_id,
-        organisation_id: orgosid
+        program_id: programDetails.program_id
       }
+
+      if (orgosid) {
+        findNomWhere['organisation_id'] = orgosid;
+      }
+
+      if (user_id) {
+        findNomWhere['user_id'] = user_id;
+      }
+
       return model.nomination.findOne({
         where: findNomWhere
       }).then((res) => {
@@ -824,9 +827,6 @@ function addOrUpdateNomination(programDetails, user_id, orgosid) {
             });
           }
       });
-    } else {
-      return reject({ msg: 'Nomination update failed - OrgId is blank'});
-    }
   });
 }
 
@@ -962,10 +962,10 @@ function getProgramCountsByOrg(req, response) {
         return response.status(200).send(successResponse(rspObj));
       }, (error) => {
         rspObj.responseCode = responseCode.SERVER_ERROR
-        rspObj.errCode = programMessages.PROGRAMCOUNTS_BYORG.ORGSEARCH.FAILED_CODE
-        rspObj.errMsg = programMessages.PROGRAMCOUNTS_BYORG.ORGSEARCH.FAILED_MESSAGE
+        rspObj.errCode = programMessages.PROGRAMCOUNTS_BYORG.ORGSEARCH_FETCH.FAILED_CODE
+        rspObj.errMsg = programMessages.PROGRAMCOUNTS_BYORG.ORGSEARCH_FETCH.FAILED_MESSAGE
         loggerError('',rspObj,errCode+errorCodes.CODE1);
-        rspObj.result = err;
+        rspObj.result = error;
         loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
         return response.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE1));
       })
@@ -1144,9 +1144,8 @@ async function programList(req, response) {
               ...filters,
               ...data.request.filters
             },
-
             attributes: data.request.fields || {
-              include : [[Sequelize.json('config.subject'), 'subject'], [Sequelize.json('config.defaultContributeOrgReview'), 'defaultContributeOrgReview'], [Sequelize.json('config.framework'), 'framework'], [Sequelize.json('config.board'), 'board'],[Sequelize.json('config.gradeLevel'), 'gradeLevel'], [Sequelize.json('config.medium'), 'medium']],
+              include : [[Sequelize.json('config.subject'), 'subject'], [Sequelize.json('config.defaultContributeOrgReview'), 'defaultContributeOrgReview'], [Sequelize.json('config.framework'), 'framework'], [Sequelize.json('config.board'), 'board'],[Sequelize.json('config.gradeLevel'), 'gradeLevel'], [Sequelize.json('config.medium'), 'medium'], [Sequelize.json('config.frameworkObj'), 'frameworkObj']],
               exclude: ['config', 'description']
             },
             offset: res_offset,
@@ -1488,6 +1487,7 @@ async function downloadProgramDetails(req, res) {
   loggerService.entryLog(data, logObject);
   const errCode = programMessages.EXCEPTION_CODE+'_'+programMessages.GENERATE_DETAILS.EXCEPTION_CODE
   let programArr = [], promiseRequests = [], cacheData = [], filteredPrograms = [];
+  let programObjs = {};
   rspObj.errCode = programMessages.GENERATE_DETAILS.FAILED_CODE
   rspObj.errMsg = programMessages.GENERATE_DETAILS.FAILED_MESSAGE
   rspObj.responseCode = responseCode.SERVER_ERROR
@@ -1511,16 +1511,26 @@ async function downloadProgramDetails(req, res) {
   });
 
   if (filteredPrograms.length) {
-  promiseRequests =  _.map(filteredPrograms, (program) => {
-    return [programServiceHelper.getCollectionWithProgramId(program, req), programServiceHelper.getSampleContentWithOrgId(program, req),programServiceHelper.getSampleContentWithCreatedBy(program, req),
-      programServiceHelper.getContributionWithProgramId(program, req), programServiceHelper.getNominationWithProgramId(program),
-      programServiceHelper.getOveralNominationData(program)];
-  });
+    if (data.request.filters.targetType  && data.request.filters.targetType === 'searchCriteria') { 
+      await _.forEach(programArr, (programId) => {
+        programServiceHelper.getProgramDetails(programId).then((program)=> {
+          programObjs[programId] = program;
+        });
+      });
+    }
+    promiseRequests =  _.map(filteredPrograms, (program) => {
+      if (!data.request.filters.targetType  || data.request.filters.targetType === 'collections') {
+        return [programServiceHelper.getCollectionWithProgramId(program, req), programServiceHelper.getSampleContentWithOrgId(program, req),programServiceHelper.getSampleContentWithCreatedBy(program, req), programServiceHelper.getContributionWithProgramId(program, req), programServiceHelper.getNominationWithProgramId(program), programServiceHelper.getOveralNominationData(program)];
+      } else if(data.request.filters.targetType === 'searchCriteria') {
+        return[programServiceHelper.getContentContributionsWithProgramId(program, req)];
+      }
+    });
 
     forkJoin(..._.flatMapDeep(promiseRequests)).subscribe((responseData) => {
     try{
-    const combainedRes = _.chunk(responseData, 6);
-    const programDetailsArray = programServiceHelper.handleMultiProgramDetails(combainedRes);
+    const chunkNumber = (!data.request.filters.targetType  || data.request.filters.targetType === 'collections') ? 6 : 1;
+    const combainedRes = _.chunk(responseData, chunkNumber);
+    const programDetailsArray = programServiceHelper.handleMultiProgramDetails(combainedRes, programObjs, data.request.filters.targetType);
     const tableData  = _.reduce(programDetailsArray, (final, data, index) => {
     final.push({program_id: filteredPrograms[index], values: data});
     return final;
@@ -1542,11 +1552,13 @@ async function downloadProgramDetails(req, res) {
     loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
     return res.status(200).send(successResponse(rspObj));
   } catch (err) {
+    console.log(JSON.stringify(err));
     loggerError('Error due to unhandled exception',rspObj,errCode+errorCodes.CODE2);
     loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
     return res.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE2));
   }
     }, (err) => {
+      console.log(JSON.stringify(err));
       loggerError('Error http requests or nomination table query promise failure',rspObj,errCode+errorCodes.CODE3);
       loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
       return res.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE3));
@@ -2672,7 +2684,7 @@ function addorUpdateUserOrgMapping(userProfile, filterRootOrg, orgOsid, userOsid
         sourcingOrgs.push(mappingObj.orgId);
       }
 
-      if (mappingObj.orgId == orgOsid) {
+      if (mappingObj.orgId === orgOsid) {
         updateOsid = mappingObj.osid;
         if (userOrgRoles.includes('ORG_ADMIN')) {
           uRoles.push('admin');
@@ -3211,7 +3223,7 @@ async function asyncOnAfterPublish (req, program_id) {
       });
 
       const collection_ids = _.get(nomination, 'collection_ids') || [];
-      return await nominateRestrictedContributors(req, program, collection_ids);
+      nominateRestrictedContributors(req, program, collection_ids);
     }
   }
   catch(err) {
@@ -3249,12 +3261,33 @@ async function asyncOnAfterPublish (req, program_id) {
           const isNominated = await programServiceHelper.isAlreadyNominated(program.program_id, org.osid);
           if (!isNominated) {
             program['copiedCollections'] = collection_ids;
-            await addOrUpdateNomination(program, org.User.userId, org.osid);
+            addOrUpdateNomination(program, org.User.userId, org.osid);
             usersToNotify.push(org.User);
           }
         }
 
-        return await programServiceHelper.notifyRestrictedContributors(req, program, usersToNotify);
+        if (!_.isEmpty(usersToNotify)) {
+          programServiceHelper.notifyRestrictedContributors(req, program, usersToNotify);
+        }
+      }
+
+      const indList = _.get(program, 'config.contributors.User') || [];
+      if (!_.isEmpty(indList)) {
+        // Get individual users diksha ids
+        const usersToNotify = [];
+        for (const ind of indList) {
+          const userId = _.get(ind, 'User.userId')
+          const isNominated = await programServiceHelper.isAlreadyNominated(program.program_id, undefined, userId);
+          if (!isNominated) {
+            program['copiedCollections'] = collection_ids;
+            addOrUpdateNomination(program, userId);
+            usersToNotify.push(ind.User);
+          }
+        }
+
+        if (!_.isEmpty(usersToNotify)) {
+          programServiceHelper.notifyRestrictedContributors(req, program, usersToNotify);
+        }
       }
     }
   }

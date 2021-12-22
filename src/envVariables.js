@@ -53,4 +53,5 @@ const envVariables = {
     method: "POST",
   },
 };
+
 module.exports = envVariables;
