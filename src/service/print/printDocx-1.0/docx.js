@@ -78,7 +78,6 @@ const buildDOCX_1_WithCallback = async (id, callback) => {
                       "SA"
                     ),
                   ];
-                  console.log("SA:", questionContent);
                   break;
                 case "LA":
                   questionContent = [
