@@ -1,5 +1,6 @@
 const { getData } = require("./dataImporter");
 const docx = require("docx");
+const fetch = require("node-fetch");
 const { Packer } = docx;
 const getDocx = require("./getdocxdata");
 var {
@@ -13,7 +14,7 @@ const buildDOCXWithCallback = async (id, callback) => {
   let error = false;
   let errorMsg = "";
   let totalMarks = 0;
-  getData(id)
+  getData(id,fetch)
     .then(async (data) => {
       if (data.error) {
         callback(null, data.error, data.errorMsg);
