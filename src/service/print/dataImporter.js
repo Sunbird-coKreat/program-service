@@ -1,6 +1,6 @@
 
 const envVariables = require("../../envVariables");
-// const fetch = require("node-fetch");
+const fetch = require("node-fetch");
 
 
 class MigrationDataImportError {
@@ -10,10 +10,10 @@ class MigrationDataImportError {
   }
 }
 
-function getItemsFromItemset(itemsetID, marks, apiClient) {
+function getItemsFromItemset(itemsetID, marks) {
   let status;
   const urlItemset = `${envVariables.baseURL}/action/itemset/v3/read/${itemsetID}`;
-  return apiClient(urlItemset)
+  return fetch(urlItemset)
     .then((r2) => {
       status = r2.status;
       return r2.json();
@@ -22,7 +22,7 @@ function getItemsFromItemset(itemsetID, marks, apiClient) {
       if (status === 200) {
         if (r.result.itemset.items.length > 0) {
           const item = r.result.itemset.items[0];
-          return getQuestionFromItem(item.identifier, marks, apiClient);
+          return getQuestionFromItem(item.identifier, marks);
         } else {
           throw new MigrationDataImportError("Empty Itemset");
         }
@@ -44,10 +44,10 @@ function getItemsFromItemset(itemsetID, marks, apiClient) {
     });
 }
 
-function getQuestionFromItem(itemID, marks, apiClient) {
+function getQuestionFromItem(itemID, marks) {
   let status;
   const urlItem = `${envVariables.baseURL}/action/assessment/v3/items/read/${itemID}`;
-  return apiClient(urlItem)
+  return fetch(urlItem)
     .then((r3) => {
       status = r3.status;
       return r3.json();
@@ -76,10 +76,10 @@ function getQuestionFromItem(itemID, marks, apiClient) {
     });
 }
 
-const getQuestionForSection = async (id,apiClient) => {
+const getQuestionForSection = async (id) => {
   const url = `${envVariables.baseURL}/action/content/v3/hierarchy/${id}?mode=edit`;
   let status;
-  return apiClient(url)
+  return fetch(url)
     .then((r1) => {
       status = r1.status;
       return r1.json();
@@ -89,7 +89,7 @@ const getQuestionForSection = async (id,apiClient) => {
         if (r.result.content.itemSets && r.result.content.itemSets.length > 0) {
           const itemset = r.result.content.itemSets[0];
           const marks = r.result.content.marks;
-          return getItemsFromItemset(itemset.identifier, marks,apiClient);
+          return getItemsFromItemset(itemset.identifier, marks);
         } else {
           throw new MigrationDataImportError("Empty Section");
         }
@@ -111,11 +111,11 @@ const getQuestionForSection = async (id,apiClient) => {
     });
 };
 
-const getData = async (id,apiClient) => {
+const getData = async (id) => {
   let error = false;
   let errorMsg = "";
   const url = `${envVariables.baseURL}/action/content/v3/hierarchy/${id}?mode=edit`;
-  return apiClient(url)
+  return fetch(url)
     .then((r4) => r4.json())
     .then((r) => {
       const data = r.result.content;
@@ -139,7 +139,7 @@ const getData = async (id,apiClient) => {
       // question_ids=[[s1.q1.id , s1.q2.id],[s2.q1.id, s2.q2.id]]
       const promiseMap = questionIds.map((sec) =>
         sec.map((question) =>
-          getQuestionForSection(question,apiClient).then((resp) => {
+          getQuestionForSection(question).then((resp) => {
             if (resp.error) {
               throw new MigrationDataImportError(resp.errorMsg);
             } else return resp;

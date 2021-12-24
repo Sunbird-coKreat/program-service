@@ -14,7 +14,7 @@ const buildDOCXWithCallback = async (id, callback) => {
   let error = false;
   let errorMsg = "";
   let totalMarks = 0;
-  getData(id,fetch)
+  getData(id)
     .then(async (data) => {
       if (data.error) {
         callback(null, data.error, data.errorMsg);

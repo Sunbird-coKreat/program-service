@@ -234,16 +234,17 @@ async function renderMCQ(question, questionCounter, marks) {
   let questionOpt = [];
   let imageProperties = [];
   if (questionOptions[0] !== undefined) {
+
     if (
-      questionOptions[0][1] !== undefined &&
-      typeof questionOptions[0][1] === "object"
+      questionOptions[0][0] !== undefined &&
+      typeof questionOptions[0][0] === "object"
     ) {
       questionOpt.push(
-        "I." + questionOptions[0][0] + questionOptions[0][1].image
+        "I." + questionOptions[0][0].image
       );
       imageProperties.push({
-        width: questionOptions[0][1].width,
-        height: questionOptions[0][1].height,
+        width: questionOptions[0][0].width,
+        height: questionOptions[0][0].height,
       });
     } else {
       questionOpt.push("I." + questionOptions[0][0]);
@@ -256,15 +257,15 @@ async function renderMCQ(question, questionCounter, marks) {
 
   if (questionOptions[1] !== undefined) {
     if (
-      questionOptions[1][1] !== undefined &&
-      typeof questionOptions[1][1] === "object"
+      questionOptions[1][0] !== undefined &&
+      typeof questionOptions[1][0] === "object"
     ) {
       questionOpt.push(
-        "II." + questionOptions[1][0] + questionOptions[1][1].image
+        "II." + questionOptions[1][0].image
       );
       imageProperties.push({
-        width: questionOptions[1][1].width,
-        height: questionOptions[1][1].height,
+        width: questionOptions[1][0].width,
+        height: questionOptions[1][0].height,
       });
     } else {
       questionOpt.push("II." + questionOptions[1][0]);
@@ -277,15 +278,15 @@ async function renderMCQ(question, questionCounter, marks) {
 
   if (questionOptions[2] !== undefined) {
     if (
-      questionOptions[2][1] !== undefined &&
-      typeof questionOptions[2][1] === "object"
+      questionOptions[2][0] !== undefined &&
+      typeof questionOptions[2][0] === "object"
     ) {
       questionOpt.push(
-        "III." + questionOptions[2][0] + questionOptions[2][1].image
+        "III." + questionOptions[2][0].image
       );
       imageProperties.push({
-        width: questionOptions[2][1].width,
-        height: questionOptions[2][1].height,
+        width: questionOptions[2][0].width,
+        height: questionOptions[2][0].height,
       });
     } else {
       questionOpt.push("III." + questionOptions[2][0]);
@@ -298,15 +299,15 @@ async function renderMCQ(question, questionCounter, marks) {
 
   if (questionOptions[3] !== undefined) {
     if (
-      questionOptions[3][1] !== undefined &&
-      typeof questionOptions[3][1] === "object"
+      questionOptions[3][0] !== undefined &&
+      typeof questionOptions[3][0] === "object"
     ) {
       questionOpt.push(
-        "IV." + questionOptions[3][0] + questionOptions[3][1].image
+        "IV." + questionOptions[3][0].image
       );
       imageProperties.push({
-        width: questionOptions[3][1].width,
-        height: questionOptions[3][1].height,
+        width: questionOptions[3][0].width,
+        height: questionOptions[3][0].height,
       });
     } else {
       questionOpt.push("IV." + questionOptions[3][0]);
