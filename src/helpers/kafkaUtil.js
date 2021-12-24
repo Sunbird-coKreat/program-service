@@ -4,7 +4,7 @@ var logger = require('sb_logger_util_v2')
 const envVariables = require("../envVariables");
 
 const client = new kafka.KafkaClient({
-  kafkaHost: envVariables.SUNBIRD_KAFKA_HOST,
+  kafkaHost: envVariables.DOCK_KAFKA_HOST,
   maxAsyncRequests: 100
 })
 
@@ -47,7 +47,8 @@ const KafkaService = {
     const record = [
       {
         topic: topicName,
-        messages: JSON.stringify(data)
+        messages: JSON.stringify(data),
+        key: data.processId
       }
     ]
     logger.info({msg: 'Kafka record', additionalInfo: {record}})

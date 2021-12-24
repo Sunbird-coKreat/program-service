@@ -7,6 +7,7 @@ var utilsService = require('../service/utilsService') //
 var contentProvider = require('sb_content_provider_util') // done
 // var { ApiInterceptor } = require('sb_api_interceptor') // done
 var ApiInterceptor = require('sb_api_interceptor') // done
+const loggerService = require('../service/loggerService');
 var _ = require('underscore') // done
 var reqMsg = messageUtil.REQUEST
 var responseCode = messageUtil.RESPONSE_CODE
