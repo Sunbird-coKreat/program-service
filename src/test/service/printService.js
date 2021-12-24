@@ -130,21 +130,6 @@ describe("Print Service", () => {
       });
   });
 
-  // it("[Integration test] should return a docx for correct Hierarchy ID", (done) => {
-  //   docx
-  //     .buildDOCXWithCallback(
-  //       "do_11341790341271552011559",
-  //       (base64, error, errorMsg) => {
-  //         expect(error).to.be.null;
-  //         expect(errorMsg).to.be.null;
-  //         done();
-  //       }
-  //     )
-  //     .catch((e) => {
-  //       done(e);
-  //     });
-  // });
-
   it("[Integration test] should return a an error for incorrect Hierarchy ID", (done) => {
     docx.buildDOCXWithCallback("any", (base64, error, errorMsg) => {
       expect(error).to.be.true;
@@ -223,16 +208,6 @@ describe("Print Service", () => {
         done(e);
       });
   });
-  // it("[Integration test] should return a docx1.0 for correct Hierarchy ID", (done) => {
-  //   docx1.buildDOCX_1_WithCallback(
-  //     "do_113431918093377536172",
-  //     (base64, error, errorMsg) => {
-  //       expect(error).to.be.null;
-  //       expect(errorMsg).to.equal(null);
-  //       done();
-  //     }
-  //   );
-  // });
 
   it("[Integration test] should return a an error for incorrect Hierarchy ID", (done) => {
     docx1.buildDOCX_1_WithCallback("any", (base64, error, errorMsg) => {

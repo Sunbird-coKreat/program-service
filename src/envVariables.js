@@ -1,13 +1,5 @@
 const envVariables = {
-  // baseURL: process.env.dock_base_url || 'https://vdn.diksha.gov.in',
-  baseURL: process.env.dock_base_url || "https://dock.sunbirded.org",
-  //https://dockstaging.sunbirded.org/
-  //https://dock.preprod.ntp.net.in/
-  //https://dock.sunbirded.org
-  // baseURL: "http://assessment-service:9000/",
-  TOKEN:
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIyOGJlNzFmZGNlYTM0ZDhkOWJlYzk4NGIwZjdhMTc4YiJ9.wzl9Jw_y2RI0cv6Ls9zOQ23HpvHiKQ_Y3VByXBsZSbE",
-  ROOTID: "01309282781705830427",
+  baseURL: process.env.dock_base_url || "https://dock.sunbirded.org", 
   SUNBIRD_URL: process.env.sunbird_base_url || "https://dev.sunbirded.org",
   SUNBIRD_PORTAL_API_AUTH_TOKEN: process.env.sunbird_api_auth_token || "",
   DOCK_CHANNEL: process.env.dock_channel || "sunbird",
@@ -16,9 +8,11 @@ const envVariables = {
   level: process.env.sunbird_service_log_level || "info",
   LEARNING_SERVICE_URL:
     process.env.learning_service_url || "https://dock.sunbirded.org/action/",
-  LEARNER_SERVICE_URL: process.env.learner_service_url,
+  LEARNER_SERVICE_URL: process.env.learner_service_url || "https://dock.sunbirded.org/action/",
   CONTENT_SERVICE_URL:
     process.env.content_service_url || "https://dock.sunbirded.org/action/",
+  ASSESSMENT_SERVICE_URL:
+    process.env.assessment_service_url || "https://dock.sunbirded.org/action/",
   OPENSABER_SERVICE_URL:
     process.env.opensaber_service_url ||
     "https://dock.sunbirded.org/content/reg",

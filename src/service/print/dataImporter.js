@@ -3,16 +3,16 @@ const envVariables = require("../../envVariables");
 const fetch = require("node-fetch");
 
 
-class MigrationDataImportError {
+class PrintDocxDataImportError {
   constructor(message) {
     this.message = message;
-    this.name = "MigrationDataImportError";
+    this.name = "PrintDocxDataImportError";
   }
 }
 
 function getItemsFromItemset(itemsetID, marks) {
   let status;
-  const urlItemset = `${envVariables.baseURL}/action/itemset/v3/read/${itemsetID}`;
+  const urlItemset = `${envVariables.LEARNER_SERVICE_URL}itemset/v3/read/${itemsetID}`;
   return fetch(urlItemset)
     .then((r2) => {
       status = r2.status;
@@ -24,17 +24,17 @@ function getItemsFromItemset(itemsetID, marks) {
           const item = r.result.itemset.items[0];
           return getQuestionFromItem(item.identifier, marks);
         } else {
-          throw new MigrationDataImportError("Empty Itemset");
+          throw new PrintDocxDataImportError("Empty Itemset");
         }
       } else {
-        throw new MigrationDataImportError(
+        throw new PrintDocxDataImportError(
           "Invalid Response for Itemset ID :: " + itemsetID
         );
       }
     })
     .catch((e) => {
       error = true;
-      if (e.name === "MigrationDataImportError");
+      if (e.name === "PrintDocxDataImportError");
       else e.message = "Uncaught Exception";
       let errorMsg = e.message;
       return {
@@ -46,7 +46,7 @@ function getItemsFromItemset(itemsetID, marks) {
 
 function getQuestionFromItem(itemID, marks) {
   let status;
-  const urlItem = `${envVariables.baseURL}/action/assessment/v3/items/read/${itemID}`;
+  const urlItem = `${envVariables.LEARNER_SERVICE_URL}assessment/v3/items/read/${itemID}`;
   return fetch(urlItem)
     .then((r3) => {
       status = r3.status;
@@ -59,14 +59,14 @@ function getQuestionFromItem(itemID, marks) {
           return r.result.assessment_item;
         } else throw "Not a valid question";
       } else {
-        throw new MigrationDataImportError(
+        throw new PrintDocxDataImportError(
           "Invalid Response for Question ID :: " + itemID
         );
       }
     })
     .catch((e) => {
       error = true;
-      if (e.name === "MigrationDataImportError");
+      if (e.name === "PrintDocxDataImportError");
       else e.message = "Uncaught Exception";
       let errorMsg = e.message;
       return {
@@ -77,7 +77,7 @@ function getQuestionFromItem(itemID, marks) {
 }
 
 const getQuestionForSection = async (id) => {
-  const url = `${envVariables.baseURL}/action/content/v3/hierarchy/${id}?mode=edit`;
+  const url = `${envVariables.CONTENT_SERVICE_URL}content/v3/hierarchy/${id}?mode=edit`;
   let status;
   return fetch(url)
     .then((r1) => {
@@ -91,17 +91,17 @@ const getQuestionForSection = async (id) => {
           const marks = r.result.content.marks;
           return getItemsFromItemset(itemset.identifier, marks);
         } else {
-          throw new MigrationDataImportError("Empty Section");
+          throw new PrintDocxDataImportError("Empty Section");
         }
       } else {
-        throw new MigrationDataImportError(
+        throw new PrintDocxDataImportError(
           "Invalid Response for Hierarchy ID :: " + id
         );
       }
     })
     .catch((e) => {
       error = true;
-      if (e.name === "MigrationDataImportError");
+      if (e.name === "PrintDocxDataImportError");
       else e.message = "Uncaught Exception";
       let errorMsg = e.message;
       return {
@@ -114,7 +114,7 @@ const getQuestionForSection = async (id) => {
 const getData = async (id) => {
   let error = false;
   let errorMsg = "";
-  const url = `${envVariables.baseURL}/action/content/v3/hierarchy/${id}?mode=edit`;
+  const url = `${envVariables.CONTENT_SERVICE_URL}content/v3/hierarchy/${id}?mode=edit`;
   return fetch(url)
     .then((r4) => r4.json())
     .then((r) => {
@@ -122,7 +122,7 @@ const getData = async (id) => {
       let sections;
       if (data && "children" in data) sections = data.children;
       else {
-        throw new MigrationDataImportError("Invalid ID");
+        throw new PrintDocxDataImportError("Invalid ID");
       }
       const questionIds = sections.map((section) => {
         if (section.children)
@@ -141,7 +141,7 @@ const getData = async (id) => {
         sec.map((question) =>
           getQuestionForSection(question).then((resp) => {
             if (resp.error) {
-              throw new MigrationDataImportError(resp.errorMsg);
+              throw new PrintDocxDataImportError(resp.errorMsg);
             } else return resp;
           })
         )
@@ -171,7 +171,7 @@ const getData = async (id) => {
     .catch((e) => {
       console.log(e);
       error = true;
-      if (e.name === "MigrationDataImportError") errorMsg = e.message;
+      if (e.name === "PrintDocxDataImportError") errorMsg = e.message;
       else errorMsg = "Uncaught Exception";
       return {
         error,
