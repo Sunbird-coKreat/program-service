@@ -11,7 +11,7 @@ var {
 } = require("./docxHelper");
 
 const buildDOCXWithCallback = async (id, callback) => {
-  let error = false;
+    let error = false;
   let errorMsg = "";
   let totalMarks = 0;
   getData(id)

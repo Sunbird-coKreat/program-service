@@ -731,7 +731,6 @@ function headers(text1, text2) {
 function displayNumber(data) {
   if (data !== undefined) {
     if (typeof data === "object") {
-      let text= data.text[0].split(".")
       return new TableCell({
         borders: MCQborder,
         width: {
@@ -747,12 +746,11 @@ function displayNumber(data) {
         verticalAlign: VerticalAlign.CENTER,
         children: [
           new Paragraph({
-            text: text[0]+".",
+            text: data[0],
           }),
         ],
       });
     } else {
-      let text= data.split(".")
       return new TableCell({
         borders: MCQborder,
         width: {
@@ -768,7 +766,7 @@ function displayNumber(data) {
         verticalAlign: VerticalAlign.CENTER,
         children: [
           new Paragraph({
-            text: text[0]+".",
+            text: data[0],
           }),
         ],
       });
@@ -798,20 +796,20 @@ function displayNumber(data) {
 
 function displayOptionsObject(data, count) {
   const arr = [];
+  
   if (data.text) {
-    data.text
+    if(typeof data === "object") {
+      arr.push(new TextRun(data));
+    } else{
+      data.text
       .map((text) => {
         if (typeof text === "object") {
           arr.push(new TextRun(text));
-        } else {
-          // arr.push(
-          //   new TextRun({
-          //     text: `${text}`,
-          //   })
-          // );
-        }
+        } 
       })
       .reduce((prev, curr) => prev.concat(curr), []);
+    }
+    
     return new TableCell({
       borders: MCQborder,
       width: {
@@ -834,11 +832,12 @@ function displayOptionsObject(data, count) {
   }
 }
 function displayOptions(option, height, width) {
+ 
   if (option !== undefined) {
-    if (typeof option === "object") {
-      return displayOptionsObject(option);
-    } else if (option.includes("data:image/")) {
-      let image = getBufferData(option);
+    if (typeof option[1] === "object") {
+      return displayOptionsObject(option[1]);
+    } else if (option[1].includes("data:image/")) {
+      let image = getBufferImg(option[1]);
       return new TableCell({
         borders: MCQborder,
         width: {
@@ -867,7 +866,7 @@ function displayOptions(option, height, width) {
         ],
       });
     } else {
-      let text= option.split(".")
+      // let text= option.split(".")
       return new TableCell({    
         borders: MCQborder,
         width: {
@@ -885,7 +884,7 @@ function displayOptions(option, height, width) {
           new Paragraph({
             children: [
               new TextRun({
-                text: text[1],
+                text: option[1],
               }),
             ],
           }),
