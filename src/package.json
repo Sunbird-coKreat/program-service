@@ -23,7 +23,7 @@
     "dateformat": "^3.0.3",
     "debug": "~2.6.9",
     "docx": "^6.0.3",
-    "express": "~4.16.1",
+    "express": "~4.17.3",
     "express-cassandra": "^2.3.2",
     "express-cluster": "0.0.5",
     "express-csv": "0.6.0",
