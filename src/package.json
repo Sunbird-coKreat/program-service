@@ -57,7 +57,7 @@
     "sb_logger_util": "file:libs/sb_logger_util",
     "sb_logger_util_v2": "file:libs/sb_logger_util_v2",
     "sb_telemetry_util": "file:libs/sb_telemetry_util",
-    "sequelize": "^5.21.5",
+    "sequelize": "^6.28.2",
     "underscore": "^1.9.2",
     "utf8": "^3.0.0",
     "uuid": "^3.2.1",
