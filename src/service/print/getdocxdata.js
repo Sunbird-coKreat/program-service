@@ -797,7 +797,7 @@ function displayOptions(option, height, width) {
   if (option !== undefined) {
     if (typeof option[1] === "object") {
       return displayOptionsObject(option[1]);
-    } else if (option[1].includes("data:image/")) {
+    } else if (option[1].includes("data:")) {
       let image = getBufferImg(option[1]);
       return new TableCell({
         borders: MCQborder,
