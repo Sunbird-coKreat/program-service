@@ -471,7 +471,7 @@ function createSAObject(data, count) {
       children: arr,
     });
   } else if (data.image) {
-    if (data.image.includes("data:image/")) {
+    if (data.image.includes("data:")) {
       let image = getBufferImg(data.image);
 
       return new Paragraph({
@@ -551,6 +551,8 @@ function imageData(image) {
     return (bufferImage = image.replace("data:image/jpg;base64,", ""));
   } else if (image.includes("data:image/jpeg;base64")) {
     return (bufferImage = image.replace("data:image/jpeg;base64,", ""));
+  } else if (image.includes("data:application/octet-stream;base64")) {
+    return (bufferImage = image.replace("data:application/octet-stream;base64,", ""));
   }
 }
 
