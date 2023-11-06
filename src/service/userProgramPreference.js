@@ -9,6 +9,7 @@ const programMessages = messageUtils.PROGRAM;
 const errorCodes = messageUtils.ERRORCODES;
 const model = require('../models');
 const loggerService = require('./loggerService');
+const { successResponse, errorResponse, loggerError } = require('../helpers/responseUtil');
 const {
   forkJoin
 } = require('rxjs');
@@ -25,16 +26,14 @@ function getPreferences(req, response) {
     traceId : req.headers['x-request-id'] || '',
     message : programMessages.PREFERENCES.READ.INFO
    }
-   loggerService.entryLog(data, logObject);
-  const errCode = programMessages.EXCEPTION_CODE+'_'+programMessages.PREFERENCES.READ.EXCEPTION_CODE
-  rspObj.apiId = 'api.preference.read';
-  rspObj.apiVersion = '1.0'
+  loggerService.entryLog(data, logObject);
 
+  const errCode = programMessages.EXCEPTION_CODE+'_'+programMessages.PREFERENCES.READ.EXCEPTION_CODE
   if (!data.request || !data.request.program_id || !data.request.user_id) {
     rspObj.errCode = programMessages.PREFERENCES.READ.MISSING_CODE
     rspObj.errMsg = programMessages.PREFERENCES.READ.MISSING_MESSAGE
     rspObj.responseCode = responseCode.CLIENT_ERROR;
-    loggerError('', rspObj, errCode+errorCodes.CODE1);
+    loggerError(rspObj, errCode+errorCodes.CODE1);
     loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCodes.CODE1}, logObject);
     return response.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE1))
   }
@@ -250,7 +249,7 @@ function syncCacheToPreferenceTable(userId, programId, cacheObj) {
 function setPreferences(req, response) {
   var data = req.body
   var rspObj = req.rspObj
-  
+
   rspObj.apiId = 'api.preference.create';
   rspObj.apiVersion = '1.0';
   const logObject = {
@@ -263,7 +262,7 @@ function setPreferences(req, response) {
     rspObj.errCode = programMessages.PREFERENCES.SET.MISSING_CODE
     rspObj.errMsg = programMessages.PREFERENCES.SET.MISSING_MESSAGE
     rspObj.responseCode = responseCode.CLIENT_ERROR;
-    loggerError('',rspObj,errCode+errorCodes.CODE1);
+    loggerError(rspObj,errCode+errorCodes.CODE1);
     loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCodes.CODE1}, logObject);
     return response.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE1))
   }
@@ -293,7 +292,7 @@ function setPreferences(req, response) {
           rspObj.responseCode = 'ERR_GET_USER_PREFERENCE_FAILED';
           rspObj.result = result.result;
           loggerService.exitLog({responseCode: rspObj.responseCode, errCode: errCode+errorCodes.CODE2}, logObject);
-          loggerError(rspObj.responseCode,rspObj,errCode+errorCodes.CODE2);
+          loggerError(rspObj,errCode+errorCodes.CODE2);
           return response.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE2));
         }
 
@@ -305,7 +304,7 @@ function setPreferences(req, response) {
               rspObj.responseCode = programMessages.PREFERENCES.CREATE.FAILED_CODE;
               rspObj.result = addRes.res;
               loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
-              loggerError('',rspObj,errCode+errorCodes.CODE3);
+              loggerError(rspObj,errCode+errorCodes.CODE3);
               return response.status(400).send(errorResponse(rspObj,errCode+errorCodes.CODE3));
             }
             else {
@@ -324,7 +323,7 @@ function setPreferences(req, response) {
               rspObj.responseCode = programMessages.PREFERENCES.UPDATE.FAILED_CODE;
               rspObj.result = updateRes.res;
               loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
-              loggerError('',rspObj,errorCode+errorCodes.CODE1);
+              loggerError(rspObj,errorCode+errorCodes.CODE1);
               return response.status(400).send(errorResponse(rspObj,errorCode+errorCodes.CODE1));
             }
             else {
@@ -352,56 +351,6 @@ function diffinHours(checkDateTime) {
   var now = moment(new Date(), 'YYYY-MM-DD HH:mm:ss');
   var duration = moment.duration(now.diff(cacheTime));
   return duration.asHours();
-}
-
-function loggerError(errmsg,data,errCode) {
-  var errObj = {}
-  errObj.eid = 'Error'
-  errObj.edata = {
-    err : errCode,
-    errtype : errmsg || data.errMsg,
-    requestid : data.msgId || uuid(),
-    stacktrace : _.truncate(JSON.stringify(data), { 'length': stackTrace_MaxLimit})
-  }
-  logger.error({msg: 'Error log', errObj})
-}
-
-function successResponse(data) {
-  var response = {}
-  response.id = data.apiId
-  response.ver = data.apiVersion
-  response.ts = new Date()
-  response.params = getParams(data.msgid, 'successful', null, null)
-  response.responseCode = data.responseCode || 'OK'
-  response.result = data.result
-  return response
-}
-
-/**
- * function create error response body.
- * @param {Object} data
- * @returns {nm$_responseUtil.errorResponse.response}
- */
-function errorResponse(data,errCode) {
-  var response = {}
-  response.id = data.apiId
-  response.ver = data.apiVersion
-  response.ts = new Date()
-  response.params = getParams(data.msgId, 'failed', data.errCode, data.errMsg)
-  response.responseCode = errCode +'_'+ data.responseCode
-  response.result = data.result
-  return response
-}
-
-function getParams(msgId, status, errCode, msg) {
-  var params = {}
-  params.resmsgid = uuid()
-  params.msgid = msgId || null
-  params.status = status
-  params.err = errCode
-  params.errmsg = msg
-
-  return params
 }
 
 module.exports.setUserPreferences = setPreferences;
