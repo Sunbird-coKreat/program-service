@@ -44,7 +44,7 @@
     "papaparse": "^5.3.1",
     "pdfmake": "^0.1.70",
     "pg": "^7.18.2",
-    "redis": "^3.0.2",
+    "redis": "^3.1.1",
     "response_util": "file:libs/response_util",
     "rewire": "^5.0.0",
     "rxjs": "^6.5.4",
