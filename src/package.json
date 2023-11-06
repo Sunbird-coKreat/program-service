@@ -11,7 +11,7 @@
   "dependencies": {
     "@project-sunbird/telemetry-sdk": "0.0.24",
     "async": "^3.2.1",
-    "axios": "^0.19.2",
+    "axios": "^0.21.2",
     "better-config": "^1.2.3",
     "bluebird": "^3.7.2",
     "cassandra-driver": "^4.4.0",
