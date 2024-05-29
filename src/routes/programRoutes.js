@@ -139,4 +139,8 @@ module.exports = function (app) {
     app.route(BASE_URL + '/user/:userId')
       .delete(requestMiddleware.createAndValidateRequestBody,
       userService.deleteUser)
+
+    app.route(BASE_URL + '/user/transfer')
+      .post(requestMiddleware.createAndValidateRequestBody,
+      userService.transferAssetOfDeleteduser)
 }

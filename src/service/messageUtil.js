@@ -1017,7 +1017,9 @@ exports.USER = {
     MISSING_MESSAGE: "User id is not passed in the request",
     FAILED_MESSAGE: 'Unable to delete given user',
     EXCEPTION_CODE: 'USER_DEL',
-    INFO: 'Delete User'
+    INFO: 'Delete User',
+    OWNERSHIP_TRANSFER_FAIL: "Error on transfering assets",
+    OWNERSHIP_TRANSFER: "Transfering assets"
   }
 }
 

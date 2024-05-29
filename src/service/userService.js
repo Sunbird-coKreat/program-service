@@ -314,6 +314,41 @@ function deleteOsUser (userDetails, callback) {
   return registryService.updateRecord(regReq, callback);
 }
 
+async function transferAssetOfDeleteduser(req, response){
+  logObject['message'] = userMessages.DELETE.OWNERSHIP_TRANSFER
+  logObject['traceId'] = req.headers['x-request-id'] || '',
+  loggerService.entryLog(req.body, logObject);
+  try {
+  KafkaService.sendRecordWithTopic(req.rspObj.request, envVariables.COKREAT_USER_DELETE_KAFKA_TOPIC, function (err, res) {
+    if (err) {
+      handelAssetOwnershiptransfer(req, err);
+    } else{
+      return response.status(200).send(successResponse(rspObj));
+    }
+  });
+ }catch(err) {
+  handelAssetOwnershiptransfer(req, err)
+ }
+}
+
+function handelAssetOwnershiptransfer(req, err){
+  var rspObj = req.rspObj
+  console.log('User transferAssetOfDeleteduser failed', JSON.stringify(err))
+  if(err && err.response && err.response.data) {
+    console.log(`User transferAssetOfDeleteduser err ==> ${req.params.userId}  ==>`, JSON.stringify(err.response.data));
+  }
+  const errCode = userMessages.DELETE.OWNERSHIP_TRANSFER_FAIL;
+  rspObj.errCode = userMessages.DELETE.FAILED_CODE;
+  rspObj.errMsg = userMessages.DELETE.FAILED_MESSAGE
+  rspObj.responseCode = responseCode.SERVER_err
+  rspObj.result  = err;
+  loggerError(rspObj, errCode);
+  loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
+  return response.status(400).send(errorResponse(rspObj,errCode))
+}
+
+
+
 function onIndividualUserDeletion (req, response, userDetails) {
   const eventData = generateDeleteUserEvent (req, response, userDetails, []);
   try {
@@ -366,4 +401,4 @@ function onOrgUserDeletion(req, response, userDetails) {
   });
 }
 
-module.exports = { getSunbirdUserProfiles, deleteUser }
+module.exports = { getSunbirdUserProfiles, deleteUser, transferAssetOfDeleteduser }
