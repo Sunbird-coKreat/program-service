@@ -319,11 +319,11 @@ async function transferAssetOfDeleteduser(req, response){
   logObject['traceId'] = req.headers['x-request-id'] || '',
   loggerService.entryLog(req.body, logObject);
   try {
-  KafkaService.sendRecordWithTopic(req.rspObj.request, envVariables.COKREAT_USER_DELETE_KAFKA_TOPIC, function (err, res) {
+  KafkaService.sendRecordWithTopic(req?.body?.request, envVariables.COKREAT_USER_DELETE_KAFKA_TOPIC, function (err, res) {
     if (err) {
       handelAssetOwnershiptransfer(req, err);
     } else{
-      return response.status(200).send(successResponse(rspObj));
+      return response.status(200).send(successResponse(res));
     }
   });
  }catch(err) {
