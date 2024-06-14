@@ -15,7 +15,7 @@ const fields =
   "body,primaryCategory,mimeType,qType,answer,templateId,responseDeclaration,interactionTypes,interactions,name,solutions,editorState,media,name,board,medium,gradeLevel,subject,topic,learningOutcome,maxScore,bloomsLevel,author,copyright,license,instructions";
 
 const QUE_READ_URL= `${envVariables.SUNBIRD_ASSESSMENT_SERVICE_BASE_URL}/question/v4/read/`;
-const QS_HIERARCHY_READ_URL = `${envVariables.SUNBIRD_ASSESSMENT_SERVICE_BASE_URL}/questionset/v4/hierarchy/`;
+const QS_HIERARCHY_READ_URL = `${envVariables.SUNBIRD_ASSESSMENT_SERVICE_BASE_URL}/questionset/v5/hierarchy/`;
 
 
 const getQuestionForSet = async (id) => {
@@ -47,7 +47,7 @@ const getQuestionSet = async (config) => {
   };
 
   return axios(request).then(async (r) => {
-    const data = r.data.result.questionSet;
+    const data = r.data.result.questionset;
     let sections;
     if (data && "children" in data) sections = data.children;
     else {

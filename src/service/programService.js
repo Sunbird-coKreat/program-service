@@ -1184,7 +1184,7 @@ function addNomination(req, response) {
   }
 
   model.nomination.create(insertObj).then(res => {
-    programServiceHelper.onAfterAddNomination(insertObj.program_id, insertObj.user_id);
+    programServiceHelper.onAfterAddNomination(insertObj.program_id, insertObj.user_id, data.request.frameworkCategories);
     loggerService.exitLog({responseCode: rspObj.responseCode, 'program_id': insertObj.program_id}, logObject);
     rspObj.responseCode = responseCode.SUCCESS;
     rspObj.result = {
@@ -1321,7 +1321,7 @@ function getNominationsList(req, response) {
   }else if (data.request.limit === 0) {
     model.nomination.findAll({
       where: {
-        ...findQuery
+                ...findQuery
       },
       attributes: [...data.request.fields || []]
     }).then(async (result) => {
@@ -1456,7 +1456,7 @@ async function downloadProgramDetails(req, res) {
     }
     promiseRequests =  _.map(filteredPrograms, (program) => {
       if (!data.request.filters.targetType  || data.request.filters.targetType === 'collections') {
-        return [programServiceHelper.getCollectionWithProgramId(program, req), programServiceHelper.getSampleContentWithOrgId(program, req),programServiceHelper.getSampleContentWithCreatedBy(program, req), programServiceHelper.getContributionWithProgramId(program, req), programServiceHelper.getNominationWithProgramId(program), programServiceHelper.getOveralNominationData(program)];
+        return [programServiceHelper.getCollectionWithProgramId(program, req, data.request.filters.frameworkCategories), programServiceHelper.getSampleContentWithOrgId(program, req),programServiceHelper.getSampleContentWithCreatedBy(program, req), programServiceHelper.getContributionWithProgramId(program, req), programServiceHelper.getNominationWithProgramId(program), programServiceHelper.getOveralNominationData(program)];
       } else if(data.request.filters.targetType === 'searchCriteria') {
         return[programServiceHelper.getContentContributionsWithProgramId(program, req)];
       }
@@ -1466,7 +1466,7 @@ async function downloadProgramDetails(req, res) {
     try{
     const chunkNumber = (!data.request.filters.targetType  || data.request.filters.targetType === 'collections') ? 6 : 1;
     const combainedRes = _.chunk(responseData, chunkNumber);
-    const programDetailsArray = programServiceHelper.handleMultiProgramDetails(combainedRes, programObjs, data.request.filters.targetType);
+    const programDetailsArray = programServiceHelper.handleMultiProgramDetails(combainedRes, programObjs, data.request.filters.targetType, data.request.filters.frameworkCategories);
     const tableData  = _.reduce(programDetailsArray, (final, data, index) => {
     final.push({program_id: filteredPrograms[index], values: data});
     return final;
@@ -2439,7 +2439,7 @@ async function generateApprovedContentReport(req, res) {
   if (filteredPrograms.length) {
     try {
     const openForContribution = data.request.filters.openForContribution || false;
-    const requests = _.map(filteredPrograms, program => programServiceHelper.getCollectionHierarchy(req, program, openForContribution));
+    const requests = _.map(filteredPrograms, program => programServiceHelper.getCollectionHierarchy(req, program, openForContribution), data.request.filters.frameworkCategories);
     const aggregatedResult = await Promise.all(requests);
       _.forEach(aggregatedResult, result => {
         cacheManager_programReport.set({ key: `approvedContentCount_${result.program_id}`, value: result },
@@ -2453,7 +2453,7 @@ async function generateApprovedContentReport(req, res) {
       });
 
     if (data.request.filters.report === 'textbookLevelReport') {
-      const textbookLevelReport = await programServiceHelper.textbookLevelContentMetrics([...aggregatedResult, ...cacheData]);
+      const textbookLevelReport = await programServiceHelper.textbookLevelContentMetrics([...aggregatedResult, ...cacheData], data.request.filters.frameworkCategories);
       rspObj.result = {
         tableData: textbookLevelReport
       }
@@ -2461,7 +2461,7 @@ async function generateApprovedContentReport(req, res) {
       loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
       return res.status(200).send(successResponse(rspObj));
     } else if (data.request.filters.report === 'chapterLevelReport') {
-      const chapterLevelReport = await programServiceHelper.chapterLevelContentMetrics([...aggregatedResult, ...cacheData]);
+      const chapterLevelReport = await programServiceHelper.chapterLevelContentMetrics([...aggregatedResult, ...cacheData], data.request.filters.frameworkCategories);
       rspObj.result = {
         tableData: chapterLevelReport
       }
@@ -2482,7 +2482,7 @@ async function generateApprovedContentReport(req, res) {
   } else {
     try {
       if (data.request.filters.report === 'textbookLevelReport') {
-        const textbookLevelReport = await programServiceHelper.textbookLevelContentMetrics([...cacheData]);
+        const textbookLevelReport = await programServiceHelper.textbookLevelContentMetrics([...cacheData], frameworkCategories);
         rspObj.result = {
           tableData: textbookLevelReport
         }
@@ -2490,7 +2490,7 @@ async function generateApprovedContentReport(req, res) {
         loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
         return res.status(200).send(successResponse(rspObj));
       } else if (data.request.filters.report === 'chapterLevelReport') {
-        const chapterLevelReport = await programServiceHelper.chapterLevelContentMetrics([...cacheData]);
+        const chapterLevelReport = await programServiceHelper.chapterLevelContentMetrics([...cacheData], frameworkCategories);
         rspObj.result = {
           tableData: chapterLevelReport
         }
