@@ -1,5 +1,5 @@
-FROM circleci/node:8.11.2-stretch as build
-MAINTAINER "Kartheek Palla" "kartheekp@ilimi.in"
+FROM node:12.20.1-slim
+MAINTAINER "Ekstep" "info@ekstep.in"
 USER root
 COPY src /opt/program-service/
 WORKDIR /opt/program-service/

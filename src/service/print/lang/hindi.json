@@ -1,0 +1,9 @@
+{
+    "studentName" : "विद्यार्थी का नाम",
+    "rollNo": "रोल न",
+    "subject": "विषय",
+    "class": "कक्षा",
+    "time": "समय",
+    "marks": "कुल अंक",
+    "instructionHead": "निर्देश"
+}

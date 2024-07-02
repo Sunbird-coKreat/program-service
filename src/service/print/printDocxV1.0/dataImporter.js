@@ -34,8 +34,9 @@ const getQuestionForSet = async (id) => {
     }
   })
 };
-const getQuestionSet = async (id) => {
-  const headers = {
+const getQuestionSet = async (config) => {
+  const id = config.id;
+    const headers = {
     Authorization: "Bearer " + envVariables.SUNBIRD_PORTAL_API_AUTH_TOKEN
   };
   let url= `${QS_HIERARCHY_READ_URL}${id}?mode=edit`
@@ -56,9 +57,15 @@ const getQuestionSet = async (id) => {
       if (section.children)
         return section.children
           .filter(
-            (child) =>
-              data.acceptedContributions &&
-              data.acceptedContributions.indexOf(child.identifier) > -1
+            (child) =>{
+              if(config && config.allQuestions && child.status.toLowerCase()==='live'){
+                return child; 
+              }
+              else if (data.acceptedContributions &&
+                data.acceptedContributions.indexOf(child.identifier) > -1){
+                  return child;
+              }
+            }
           )
           .map((child) => {
             return child.identifier;

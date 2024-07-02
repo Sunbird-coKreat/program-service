@@ -10,11 +10,11 @@ var {
   renderQuestion,
 } = require("../docxHelper");
 
-const buildDOCX_1_WithCallback = async (id, callback) => {
+const buildDOCX_1_WithCallback = async (config, callback) => {
   let error = false;
   let errorMsg = "";
   let totalMarks = 0;
-  getQuestionSet(id)
+  getQuestionSet(config)
     .then(async (data) => {
         if (data.error) {
         callback(null, data.error, data.errorMsg);
@@ -34,6 +34,9 @@ const buildDOCX_1_WithCallback = async (id, callback) => {
           className: grade,
           subject: subject,
           instructions: instructions == undefined ? undefined : instructions.split(/\n/),
+          language: data.paperData.medium[0] ? data.paperData.medium[0] : '',
+          maxTime: (data.paperData && data.paperData.timeLimits && data.paperData.timeLimits.maxTime) ? `${(Math.floor(data.paperData.timeLimits.maxTime)/60)} Minutes` : "............",
+          maxScore: data.paperData.maxScore? maxScore : "............"
         };
         let questionCounter = 0;
 

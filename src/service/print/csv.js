@@ -1,5 +1,5 @@
 const { getQuestionSet } = require("./printDocxV1.0/dataImporter");
-const JSON2CSV = require("json2csv").parse;
+const JSON2CSV = require("json-2-csv");
 var cheerio = require("cheerio");
 var cheerioTableparser = require("cheerio-tableparser");
 
@@ -7,7 +7,10 @@ const buildCSVWithCallback = async (id, callback) => {
   let error = false;
   let errorMsg = "";
   let totalMarks = 0;
-  getQuestionSet(id)
+  const config = {
+   id: id
+  }
+  getQuestionSet(config)
     .then(async (data) => {
       if (data.error) {
         callback(null, data.error, data.errorMsg, null);
@@ -126,10 +129,13 @@ const buildCSVWithCallback = async (id, callback) => {
           "LeftColumn",
         ];
 
-        let csv = JSON2CSV(questionPaperContent, {
-          fields: fields,
-          withBOM: true,
-        });
+        let csv = null;
+       await JSON2CSV.json2csvAsync(questionPaperContent,{
+        fields: fields,
+        excelBOM: true
+       })
+        .then((data) => { csv = data; })
+        .catch((err) => { throw err; });
         let filename = grade + "_" + subject + "_" + examName;
         filename = filename.replace(/\s/g, "");
         callback(csv, error, errorMsg, filename);
@@ -230,7 +236,7 @@ async function getStack(htmlString, questionCounter) {
                   nextLine = `${envVariables.baseURL}` + src;
                 }
                 count++;
-  
+
               }
           }
           if (!nextLine)
@@ -392,7 +398,6 @@ async function renderMCQ(
   questionOptions.forEach(( quesOpt , i)=>{
     data[`Option${i+1}`] =   quesOpt[0]
   })
-
   return data;
 }
 

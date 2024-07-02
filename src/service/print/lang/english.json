@@ -1,0 +1,9 @@
+{
+    "studentName" : "Student Name",
+    "rollNo": "Roll Number",
+    "subject": "Subject",
+    "class": "Class",
+    "time": "Time",
+    "marks": "Marks",
+    "instructionHead": "Instructions"
+}

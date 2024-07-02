@@ -1,9 +1,13 @@
 var cheerio = require("cheerio");
 var cheerioTableparser = require("cheerio-tableparser");
 const sizeOf = require("image-size");
-const { compact } = require("lodash");
 const ProgramServiceHelper = require("../../helpers/programHelper");
 const programServiceHelper = new ProgramServiceHelper();
+const optionLabelling = {
+  english: ['i', 'ii', 'iii', 'iv'],
+  hindi: ['क', 'ख', 'ग', 'घ'],
+}
+const defaultLanguage = 'english'
 
 var {
   docDefinition,
@@ -237,6 +241,7 @@ async function getStack(htmlString) {
 }
 
 async function renderMCQ(question, questionCounter, marks) {
+  const printLanguage = (question.medium && question.medium.length) ? question.medium[0].toLowerCase() : defaultLanguage;
   const questionOptions = [];
   let questionTitle;
   for (const [index, qo] of question.editorState.options.entries()) {
@@ -264,120 +269,14 @@ async function renderMCQ(question, questionCounter, marks) {
 
   let questionOpt = [];
   let imageProperties = [];
-  if (questionOptions[0] !== undefined) {
-    if (
-      questionOptions[0][0] !== undefined &&
-      typeof questionOptions[0][0] === "object"
-    ) {
-      if (questionOptions[0][0].text) {
-        questionOpt.push(["I.", questionOptions[0][0].text[1]]);
-        imageProperties.push({
-          width: 0,
-          height: 0,
-        });
-      } else {
-        questionOpt.push(["I.", questionOptions[0][0].image]);
-        imageProperties.push({
-          width: questionOptions[0][0].width,
-          height: questionOptions[0][0].height,
-        });
-      }
-    } else {
-      questionOpt.push(["I.", questionOptions[0][0]]);
-      imageProperties.push({
-        width: 0,
-        height: 0,
-      });
-    }
+
+  for (let i = 0; i < questionOptions.length; i++) {
+    setOptions(questionOptions, questionOpt, imageProperties, printLanguage, i)
   }
 
-  if (questionOptions[1] !== undefined) {
-    if (
-      questionOptions[1][0] !== undefined &&
-      typeof questionOptions[1][0] === "object"
-    ) {
-      if (questionOptions[1][0].text) {
-        questionOpt.push(["II.", questionOptions[1][0].text[1]]);
-        imageProperties.push({
-          width: 0,
-          height: 0,
-        });
-      } else {
-        questionOpt.push(["II.", questionOptions[1][0].image]);
-        imageProperties.push({
-          width: questionOptions[1][0].width,
-          height: questionOptions[1][0].height,
-        });
-      }
-    } else {
-      questionOpt.push(["II.", questionOptions[1][0]]);
-      imageProperties.push({
-        width: 0,
-        height: 0,
-      });
-    }
-  }
-
-  if (questionOptions[2] !== undefined) {
-    if (
-      questionOptions[2][0] !== undefined &&
-      typeof questionOptions[2][0] === "object"
-    ) {
-      if (questionOptions[2][0].text) {
-        questionOpt.push(["III.", questionOptions[2][0].text[1]]);
-        imageProperties.push({
-          width: 0,
-          height: 0,
-        });
-      } else {
-        questionOpt.push(["III.", questionOptions[2][0].image]);
-        imageProperties.push({
-          width: questionOptions[2][0].width,
-          height: questionOptions[2][0].height,
-        });
-      }
-    } else {
-      questionOpt.push(["III.", questionOptions[2][0]]);
-      imageProperties.push({
-        width: 0,
-        height: 0,
-      });
-    }
-  }
-
-  if (questionOptions[3] !== undefined) {
-    if (
-      questionOptions[3][0] !== undefined &&
-      typeof questionOptions[3][0] === "object"
-    ) {
-      if (questionOptions[3][0].text) {
-        questionOpt.push(["IV.", questionOptions[3][0].text[1]]);
-        imageProperties.push({
-          width: 0,
-          height: 0,
-        });
-      } else {
-        questionOpt.push(["IV.", questionOptions[3][0].image]);
-        imageProperties.push({
-          width: questionOptions[3][0].width,
-          height: questionOptions[3][0].height,
-        });
-      }
-    } else {
-      questionOpt.push(["IV.", questionOptions[3][0]]);
-      imageProperties.push({
-        width: 0,
-        height: 0,
-      });
-    }
-  }
   let data = {
     QuestionIndex: questionCounter,
     Questions: questionTitle,
-    Option1: questionOpt[0],
-    Option2: questionOpt[1],
-    Option3: questionOpt[2],
-    Option4: questionOpt[3],
     Marks: marks,
     Language: detectLanguage(questionTitle[0]),
     type: "MCQ",
@@ -391,7 +290,39 @@ async function renderMCQ(question, questionCounter, marks) {
     width4: imageProperties[3] ? imageProperties[3].width : undefined,
   };
 
+  for (let index = 0; index < questionOptions.length; index++) {
+    data[`Option${index + 1}`] = questionOpt[index];
+  }
   return data;
+}
+
+function setOptions(questionOptions, questionOpt, imageProperties, printLanguage, i) {
+  if (questionOptions[i] !== undefined) {
+    if (
+      questionOptions[i][0] !== undefined &&
+      typeof questionOptions[i][0] === "object"
+    ) {
+      if (questionOptions[i][0].text) {
+        questionOpt.push([`${getLanguageKey(printLanguage, i)+")"}`, questionOptions[i][0].text[1]]);
+        imageProperties.push({
+          width: 0,
+          height: 0,
+        });
+      } else {
+        questionOpt.push([`${getLanguageKey(printLanguage, i)+")"}`, questionOptions[i][0].image]);
+        imageProperties.push({
+          width: questionOptions[i][0].width,
+          height: questionOptions[i][0].height,
+        });
+      }
+    } else {
+      questionOpt.push([`${getLanguageKey(printLanguage, i)+")"}`, questionOptions[i][0]]);
+      imageProperties.push({
+        width: 0,
+        height: 0,
+      });
+    }
+  }
 }
 
 async function renderQuestion(question, questionCounter, marks, Type) {
@@ -497,6 +428,13 @@ async function renderMTF(question, questionCounter, marks, Type) {
   };
 
   return mtfData;
+}
+function getLanguageKey(lang, index) {
+  if (optionLabelling.hasOwnProperty(lang) && optionLabelling[lang].length > index) {
+    return optionLabelling[lang][index];
+  }
+
+  return optionLabelling[defaultLanguage][index];
 }
 
 module.exports = {
