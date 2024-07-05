@@ -19,6 +19,7 @@ const envVariables = {
     SUNBIRD_KAFKA_BULKUPLOAD_CONSUMER_GROUP_ID:process.env.sunbird_kafka_bulkupload_consumer_group_id,
     SUNBIRD_ASSESSMENT_SERVICE_BASE_URL : process.env.sunbird_assessment_service_base_url,
     CORE_INGRESS_GATEWAY_IP: process.env.CORE_INGRESS_GATEWAY_IP,
+    COKREAT_USER_DELETE_KAFKA_TOPIC: process.env.cokreat_user_delete_kafka_topic || 'sunbirddev.delete.user',
     config: {
         user: process.env.sunbird_program_db_user || "postgres",
         host: process.env.sunbird_program_db_host || "localhost",

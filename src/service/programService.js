@@ -3,7 +3,7 @@ const uuid = require("uuid/v1");
 const logger = require('sb_logger_util_v2');
 const SbCacheManager = require('sb_cache_manager');
 const messageUtils = require('./messageUtil');
-const { successResponse, errorResponse, loggerError } = require('../helpers/responseUtil');
+const { successResponse, errorResponse, loggerError, handleSuccessResponse, handleErrorResponse } = require('../helpers/responseUtil');
 const Sequelize = require('sequelize');
 const moment = require('moment');
 const loggerService = require('./loggerService');
@@ -15,6 +15,7 @@ const contentTypeMessages = messageUtils.CONTENT_TYPE;
 const configurationMessages = messageUtils.CONFIGURATION;
 const errorCodes = messageUtils.ERRORCODES;
 const model = require('../models');
+console.log(model);
 const { from  } = require("rxjs");
 
 const {
@@ -40,8 +41,7 @@ const cacheManager = new SbCacheManager({ttl: envVariables.CACHE_TTL});
 const cacheManager_programReport = new SbCacheManager({ttl: 86400});
 const registryService = new RegistryService()
 const hierarchyService = new HierarchyService()
-const UserService = require('./userService');
-const userService = new UserService();
+const userService = require('./userService');
 
 function getProgram(req, response) {
  const logObject = {
@@ -180,7 +180,7 @@ function publishProgram(req, response) {
   var reqBody = req.body;
   const logObject = {
     traceId : req.headers['x-request-id'] || '',
-    message : programMessages.PUBLISH.INFO
+    message : "publishProgram() -  " + programMessages.PUBLISH.INFO
   }
   loggerService.entryLog(reqBody, logObject);
 
@@ -200,6 +200,8 @@ function publishProgram(req, response) {
       req.rspObj.errCode = programMessages.EXCEPTION_CODE+'_'+contentMessages.UNLISTED_PUBLISH.EXCEPTION_CODE
     }
     if (_.get(program, 'program_id') && (_.get(program, 'target_type') === 'collections' || _.get(program, 'target_type') === null || _.isUndefined(_.get(program, 'target_type')))) {
+      console.log('copyCollectionsProgram');
+      console.log('copyCollectionsProgramReq');
       programServiceHelper.copyCollections(program, req, response, publishCallback);
     } else if (_.get(program, 'program_id')) {
       publishCallback(null, req, response, program);
@@ -254,7 +256,6 @@ const publishCallback = function(errObj, req, response, program, copyCollectionR
       returning: true,
       individualHooks: true,
     };
-
     model.program.update(updateValue, updateQuery).then(resData => {
       if (_.isArray(resData) && !resData[0]) {
         loggerService.exitLog({responseCode: 'ERR_PUBLISH_PROGRAM', errCode: req.rspObj.errCode+errorCodes.CODE2}, logObject);
@@ -284,7 +285,6 @@ const publishCallback = function(errObj, req, response, program, copyCollectionR
         }
     });
     }).catch(error => {
-      console.log(JSON.stringify(error));
       loggerService.exitLog({responseCode: 'ERR_PUBLISH_PROGRAM', errCode: req.rspObj.errCode+errorCodes.CODE3}, logObject);
       loggerError(req.rspObj, req.rspObj.errCode+errorCodes.CODE3);
       req.rspObj.responseCode = 'ERR_PUBLISH_PROGRAM';
@@ -522,8 +522,8 @@ function onAfterPublishProgram(programDetails, reqHeaders, afterPublishCallback)
             afterPublishCallback(onPublishResult);
           }
         }
-        const dikshaUserProfilesApiResp = await userService.getDikshaUserProfiles({'headers': reqHeaders}, programDetails.createdby);
-        let orgUsersDetails = _.get(dikshaUserProfilesApiResp.data, 'result.response.content');
+        const sunbirdUserProfilesApiResp = await userService.getSunbirdUserProfiles({'headers': reqHeaders}, programDetails.createdby);
+        let orgUsersDetails = _.get(sunbirdUserProfilesApiResp.data, 'result.response.content');
         // create a registry for the user adn then an org and create mapping for the org as a admin
           if (orgUsersDetails) {
             const userDetails = _.first(orgUsersDetails);
@@ -538,7 +538,7 @@ function onAfterPublishProgram(programDetails, reqHeaders, afterPublishCallback)
               createOrgMappingInRegistry(userDetails, userRegData, regMethodCallback);
             }
           } else {
-            onPublishResult['error'] = {msg: "error while getting users details from Diksha"};
+            onPublishResult['error'] = {msg: "error while getting users details from Sunbird"};
             afterPublishCallback(onPublishResult);
           }
       }
@@ -997,7 +997,7 @@ async function programList(req, response) {
     res_limit = (data.request.limit < queryRes_Max) ? data.request.limit : (queryRes_Max);
   }
 
-  const filtersOnConfig = ['medium', 'subject', 'gradeLevel'];
+  const filtersOnConfig = data.request.frameworkCategoryFields || [];
   const filters = {};
   filters[Op.and] = _.compact(_.map(data.request.filters, (value, key) => {
     const res = {};
@@ -1074,6 +1074,11 @@ async function programList(req, response) {
       return response.status(200).send(successResponse(rspObj));
     }
     else {
+      let fieldsInConfig = (data.request.frameworkCategoryFields || []).concat(['defaultContributeOrgReview', 'framework', 'frameworkObj'])
+      let configFieldsInclude = _.map(fieldsInConfig, (field) => {
+        return [Sequelize.json(`config.${field}`), `${field}`]
+      });
+
       if (data.request.filters && data.request.filters.role && data.request.filters.user_id) {
         const promises = [];
         const roles = data.request.filters.role;
@@ -1091,6 +1096,9 @@ async function programList(req, response) {
                 ...whereCond,
                 ...data.request.filters,
                 ...filters
+              },
+              attributes:{
+                include : configFieldsInclude,
               },
               offset: res_offset,
               limit: res_limit,
@@ -1112,14 +1120,14 @@ async function programList(req, response) {
           loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
           return response.status(200).send(successResponse(rspObj));
         } else {
-
+        
           const res = await model.program.findAll({
             where: {
               ...filters,
               ...data.request.filters
             },
             attributes: data.request.fields || {
-              include : [[Sequelize.json('config.subject'), 'subject'], [Sequelize.json('config.defaultContributeOrgReview'), 'defaultContributeOrgReview'], [Sequelize.json('config.framework'), 'framework'], [Sequelize.json('config.board'), 'board'],[Sequelize.json('config.gradeLevel'), 'gradeLevel'], [Sequelize.json('config.medium'), 'medium'], [Sequelize.json('config.frameworkObj'), 'frameworkObj']],
+              include : configFieldsInclude,
               exclude: ['config', 'description']
             },
             offset: res_offset,
@@ -1128,6 +1136,7 @@ async function programList(req, response) {
               ['updatedon', 'DESC']
             ]
           });
+  
           let apiRes = _.map(res, 'dataValues');
           if (data.request.sort){
             apiRes = programServiceHelper.sortPrograms(apiRes, data.request.sort);
@@ -1175,7 +1184,7 @@ function addNomination(req, response) {
   }
 
   model.nomination.create(insertObj).then(res => {
-    programServiceHelper.onAfterAddNomination(insertObj.program_id, insertObj.user_id);
+    programServiceHelper.onAfterAddNomination(insertObj.program_id, insertObj.user_id, data.request.frameworkCategories);
     loggerService.exitLog({responseCode: rspObj.responseCode, 'program_id': insertObj.program_id}, logObject);
     rspObj.responseCode = responseCode.SUCCESS;
     rspObj.result = {
@@ -1312,7 +1321,7 @@ function getNominationsList(req, response) {
   }else if (data.request.limit === 0) {
     model.nomination.findAll({
       where: {
-        ...findQuery
+                ...findQuery
       },
       attributes: [...data.request.fields || []]
     }).then(async (result) => {
@@ -1356,6 +1365,7 @@ function getNominationsList(req, response) {
           return response.status(200).send(successResponse(rspObj))
         }
         const userOrgAPIPromise = [];
+        userOrgAPIPromise.push(userService.getSunbirdUserProfiles(req, userList, ['firstName', 'lastName', 'identifier']));
         userOrgAPIPromise.push(getUsersDetails(req, userList))
         if(!_.isEmpty(orgList)) {
           userOrgAPIPromise.push(getOrgDetails(req, orgList));
@@ -1363,26 +1373,21 @@ function getNominationsList(req, response) {
 
         forkJoin(...userOrgAPIPromise)
         .subscribe((resData) => {
-          const allUserData = _.first(resData);
+          const allUserSunbirdData = _.first(resData);
+          const allUserData = _.nth(resData, 1);
           const allOrgData = userOrgAPIPromise.length > 1 ? _.last(resData) : {};
-          if(allUserData && !_.isEmpty(_.get(allUserData, 'data.result.User'))) {
-            const listOfUserId = _.map(result, 'user_id');
-            _.forEach(allUserData.data.result.User, (userData) => {
-              const index = (userData && userData.userId) ? _.indexOf(listOfUserId, userData.userId) : -1;
-              if (index !== -1) {
-                result[index].dataValues.userData = userData;
-              }
-            })
-          }
-          if(allOrgData && !_.isEmpty(_.get(allOrgData, 'data.result.Org'))) {
-            const listOfOrgId = _.map(result, 'organisation_id');
-            _.forEach(allOrgData.data.result.Org, (orgData) => {
-              const index = (orgData && orgData.osid) ? _.indexOf(listOfOrgId, orgData.osid) : -1;
-              if (index !== -1) {
-                result[index].dataValues.orgData = orgData;
-              }
-            })
-          }
+
+          _.map(result, (nomElement) => {
+            if (nomElement.dataValues.user_id) {
+              const userSunbirdData = (allUserSunbirdData && !_.isEmpty(_.get(allUserSunbirdData, 'data.result.response.content'))) ?_.find(allUserSunbirdData.data.result.response.content, {'identifier' : nomElement.dataValues.user_id}) : {};
+              const userOsData = (allUserData && !_.isEmpty(_.get(allUserData, 'data.result.User'))) ?_.find(allUserData.data.result.User, {'userId' : nomElement.user_id}): {};
+              nomElement.dataValues.userData = _.assign(userOsData, userSunbirdData)
+            }
+            if (nomElement.dataValues.organisation_id) {
+              nomElement.dataValues.orgData = (allOrgData && !_.isEmpty(_.get(allOrgData, 'data.result.Org'))) ? _.find(allOrgData.data.result.Org, {'osid' : nomElement.organisation_id}) : {};
+            }
+          });
+
           rspObj.result = result;
           rspObj.responseCode = responseCode.SUCCESS;
           loggerService.exitLog({responseCode: 'OK'}, logObject);
@@ -1451,7 +1456,7 @@ async function downloadProgramDetails(req, res) {
     }
     promiseRequests =  _.map(filteredPrograms, (program) => {
       if (!data.request.filters.targetType  || data.request.filters.targetType === 'collections') {
-        return [programServiceHelper.getCollectionWithProgramId(program, req), programServiceHelper.getSampleContentWithOrgId(program, req),programServiceHelper.getSampleContentWithCreatedBy(program, req), programServiceHelper.getContributionWithProgramId(program, req), programServiceHelper.getNominationWithProgramId(program), programServiceHelper.getOveralNominationData(program)];
+        return [programServiceHelper.getCollectionWithProgramId(program, req, data.request.filters.frameworkCategories), programServiceHelper.getSampleContentWithOrgId(program, req),programServiceHelper.getSampleContentWithCreatedBy(program, req), programServiceHelper.getContributionWithProgramId(program, req), programServiceHelper.getNominationWithProgramId(program), programServiceHelper.getOveralNominationData(program)];
       } else if(data.request.filters.targetType === 'searchCriteria') {
         return[programServiceHelper.getContentContributionsWithProgramId(program, req)];
       }
@@ -1461,7 +1466,7 @@ async function downloadProgramDetails(req, res) {
     try{
     const chunkNumber = (!data.request.filters.targetType  || data.request.filters.targetType === 'collections') ? 6 : 1;
     const combainedRes = _.chunk(responseData, chunkNumber);
-    const programDetailsArray = programServiceHelper.handleMultiProgramDetails(combainedRes, programObjs, data.request.filters.targetType);
+    const programDetailsArray = programServiceHelper.handleMultiProgramDetails(combainedRes, programObjs, data.request.filters.targetType, data.request.filters.frameworkCategories);
     const tableData  = _.reduce(programDetailsArray, (final, data, index) => {
     final.push({program_id: filteredPrograms[index], values: data});
     return final;
@@ -1772,10 +1777,10 @@ function getOrgDetails(req, orgList) {
 }
 
 async function getUsersDetailsById(req, response) {
-  const dikshaUserId = req.params.user_id
+  const sunbirdUserId = req.params.user_id
   async.waterfall([
     function (callback1) {
-      getUserDetailsFromRegistry(dikshaUserId, callback1)
+      getUserDetailsFromRegistry(sunbirdUserId, callback1)
     },
     function (user, callback2) {
       getUserOrgMappingDetailFromRegistry(user, callback2);
@@ -1836,19 +1841,19 @@ async function contributorSearch(req, response) {
     const userListApiResp = await registryService.getUserList(data, userOsIds);
     const userList = _.get(userListApiResp.data, 'result.User');
 
-    // Get Diksha user profiles
-    const dikshaUserIdentifier = _.uniq(_.map(userList, e => e.userId));
+    // Get Sunbird user profiles
+    const sunbirdUserIdentifier = _.uniq(_.map(userList, e => e.userId));
 
-    const dikshaUserProfilesApiResp = await userService.getDikshaUserProfiles(req, dikshaUserIdentifier);
-    let orgUsersDetails = _.get(dikshaUserProfilesApiResp.data, 'result.response.content');
+    const sunbirdUserProfilesApiResp = await userService.getSunbirdUserProfiles(req, sunbirdUserIdentifier);
+    let orgUsersDetails = _.get(sunbirdUserProfilesApiResp.data, 'result.response.content');
 
-    // Attach os user object details to diksha user profile
+    // Attach os user object details to Sunbird user profile
     if (!_.isEmpty(orgUsersDetails)) {
       const roles = _.get(data.request, 'filters.user_org.roles');
       orgUsersDetails = _.map(
-        _.filter(orgUsersDetails, obj => { if (obj.identifier) { return obj; } }),
+        _.filter(orgUsersDetails, obj => { if (obj.identifier && !obj.isDeleted) { return obj; } }),
         (obj) => {
-          if (obj.identifier) {
+          if (obj.identifier && !obj.isDeleted) {
             const tempUserObj = _.find(userList, { 'userId': obj.identifier });
             obj.name = `${ obj.firstName } ${ obj.lastName || '' }`;
             obj.User = _.find(userList, { 'userId': obj.identifier });
@@ -1858,7 +1863,7 @@ async function contributorSearch(req, response) {
           }
       });
 
-      const defaultFields =["id","identifier","userId","rootOrgId","userName","status","roles","maskedEmail","maskedPhone","firstName","lastName","name","User","User_Org","stateValidated","selectedRole","channel"];
+      const defaultFields =["id","identifier","userId","rootOrgId","userName","status","roles","maskedEmail","maskedPhone","firstName","lastName","name","User","User_Org","stateValidated","selectedRole","channel", "isDeleted"];
       const fields = _.get(data.request, 'fields') || [];
       const keys = fields.length > 0 ? fields : defaultFields;
       orgUsersDetails = _.map(orgUsersDetails, e => _.pick(e, keys));
@@ -2026,8 +2031,6 @@ function createUserRecords(user, userOrgMapDetails, orgInfoList, callback) {
     logger.error("Error while parsing for user lists")
     callback("Some Internal processing error while parsing user details", null)
   }
-
-
 }
 
 function programSearch(req, response) {
@@ -2436,7 +2439,7 @@ async function generateApprovedContentReport(req, res) {
   if (filteredPrograms.length) {
     try {
     const openForContribution = data.request.filters.openForContribution || false;
-    const requests = _.map(filteredPrograms, program => programServiceHelper.getCollectionHierarchy(req, program, openForContribution));
+    const requests = _.map(filteredPrograms, program => programServiceHelper.getCollectionHierarchy(req, program, openForContribution), data.request.filters.frameworkCategories);
     const aggregatedResult = await Promise.all(requests);
       _.forEach(aggregatedResult, result => {
         cacheManager_programReport.set({ key: `approvedContentCount_${result.program_id}`, value: result },
@@ -2450,7 +2453,7 @@ async function generateApprovedContentReport(req, res) {
       });
 
     if (data.request.filters.report === 'textbookLevelReport') {
-      const textbookLevelReport = await programServiceHelper.textbookLevelContentMetrics([...aggregatedResult, ...cacheData]);
+      const textbookLevelReport = await programServiceHelper.textbookLevelContentMetrics([...aggregatedResult, ...cacheData], data.request.filters.frameworkCategories);
       rspObj.result = {
         tableData: textbookLevelReport
       }
@@ -2458,7 +2461,7 @@ async function generateApprovedContentReport(req, res) {
       loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
       return res.status(200).send(successResponse(rspObj));
     } else if (data.request.filters.report === 'chapterLevelReport') {
-      const chapterLevelReport = await programServiceHelper.chapterLevelContentMetrics([...aggregatedResult, ...cacheData]);
+      const chapterLevelReport = await programServiceHelper.chapterLevelContentMetrics([...aggregatedResult, ...cacheData], data.request.filters.frameworkCategories);
       rspObj.result = {
         tableData: chapterLevelReport
       }
@@ -2479,7 +2482,7 @@ async function generateApprovedContentReport(req, res) {
   } else {
     try {
       if (data.request.filters.report === 'textbookLevelReport') {
-        const textbookLevelReport = await programServiceHelper.textbookLevelContentMetrics([...cacheData]);
+        const textbookLevelReport = await programServiceHelper.textbookLevelContentMetrics([...cacheData], frameworkCategories);
         rspObj.result = {
           tableData: textbookLevelReport
         }
@@ -2487,7 +2490,7 @@ async function generateApprovedContentReport(req, res) {
         loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
         return res.status(200).send(successResponse(rspObj));
       } else if (data.request.filters.report === 'chapterLevelReport') {
-        const chapterLevelReport = await programServiceHelper.chapterLevelContentMetrics([...cacheData]);
+        const chapterLevelReport = await programServiceHelper.chapterLevelContentMetrics([...cacheData], frameworkCategories);
         rspObj.result = {
           tableData: chapterLevelReport
         }
@@ -3067,19 +3070,25 @@ function syncUsersToRegistry(req, response) {
       rspObj.responseCode = "Failed to get the programs";
       rspObj.result = {};
       loggerService.exitLog({responseCode: rspObj.responseCode}, logObject);
-      return response.status(400).send(errorResponse(rspObj,rspObj.errCode));
+      return response.status(500).send(errorResponse(rspObj,rspObj.errCode));
   });
 }
 
 
 function health(req, response) {
-  return response.status(200).send(successResponse({
-    apiId: 'api.program.health',
-    ver: '1.0',
-    msgid: uuid(),
-    responseCode: 'OK',
-    result: {}
-  }));
+  // check if prostgres up and running
+  model.sequelize.authenticate()
+  .then(() => {
+    console.log('Connection has been established successfully.');
+    return handleSuccessResponse(req, response, {})
+  })
+  .catch(err => {
+    const postgresHealthError = messageUtils.HEALTH_CHECK.POSTGRES_DB;
+    req.rspObj.errCode = postgresHealthError.FAILED_CODE
+    req.rspObj.errMsg = postgresHealthError.FAILED_MESSAGE
+    req.rspObj.result = err
+    return handleErrorResponse(req, response, {})
+  });
 }
 
 
@@ -3137,7 +3146,7 @@ async function asyncOnAfterPublish (req, program_id) {
     if (!_.isEmpty(_.get(program, 'config.contributors'))) {
       const orgList = _.get(program, 'config.contributors.Org') || [];
       if (!_.isEmpty(orgList)) {
-        // Get org creator diksha ids
+        // Get org creator sunbird ids
         const usersToNotify = [];
         for (const org of orgList) {
           const isNominated = await programServiceHelper.isAlreadyNominated(program.program_id, org.osid);
@@ -3155,7 +3164,7 @@ async function asyncOnAfterPublish (req, program_id) {
 
       const indList = _.get(program, 'config.contributors.User') || [];
       if (!_.isEmpty(indList)) {
-        // Get individual users diksha ids
+        // Get individual users sunbird ids
         const usersToNotify = [];
         for (const ind of indList) {
           const userId = _.get(ind, 'User.userId')

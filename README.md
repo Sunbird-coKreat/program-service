@@ -2,9 +2,9 @@
 
 ## Pre-requisites
 
-1. Before you install program service on your laptop, examine your environment and gather data to ensure an optimal installation experience. Review the [details](https://app.gitbook.com/o/-Mi9QwJlsfb7xuxTBc0J/s/SjljYc0PyD64vGgDlMl4/use/system-requirements) to ensure that the environment has the necessary resources and compliant target systems to successfully install and run Program Service.
+1. Before you install program service on your laptop, examine your environment and gather data to ensure an optimal installation experience. Review the [details](https://sunbird.gitbook.io/sunbird-cokreat-1/use/developer-guide/contribution-service/contribution-service) to ensure that the environment has the necessary resources and compliant target systems to successfully install and run Program Service.
 
-2. Program service uses Postgres database to store and manage data. Refer [programs.sql](https://github.com/Sunbird-Ed/program-service/blob/master/programs.sql) for the database and table structure.
+2. Program service uses Postgres database to store and manage data. Refer [programs.sql](https://github.com/Sunbird-Ed/program-service/blob/master/programs.sql) for the database and table structure, You need to run the program.sql file in postgrase DB to set the table structure.
 
 ## Project Setup
 

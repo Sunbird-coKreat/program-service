@@ -514,10 +514,9 @@ exports.EMAIL = {
 }
 
 exports.HEALTH_CHECK = {
-  EK_STEP: {
-    NAME: 'ekstep.api',
-    FAILED_CODE: 'CONTENT_PROVIDER_HEALTH_FAILED',
-    FAILED_MESSAGE: 'Content provider service is not healthy'
+  POSTGRES_DB: {
+    FAILED_CODE: 'POSTGRES_HEALTH_FAILED',
+    FAILED_MESSAGE: 'Postgres db is not connected'
   },
   LEARNER_SERVICE: {
     NAME: 'learnerservice.api',
@@ -539,7 +538,6 @@ exports.DIALCODE = {
     FAILED_MESSAGE: 'Generate dialcode failed',
     MISSING_COUNT: 'ERR_DIALCODE_GENERATE_COUNT_ERROR',
     MISSING_COUNT_MESSAGE: 'Required fields count is missing or invalid'
-
   },
 
   LIST: {
@@ -1011,3 +1009,15 @@ exports.PROGRAM_FEED = {
     INFO: 'Search For Program Feed Updates'
   }
 }
+
+exports.USER = {
+  DELETE: {
+    FAILED_CODE: "ERR_DELETING_USER_FAILED",
+    MISSING_CODE: 'ERR_DELETING_USER_MISSING',
+    MISSING_MESSAGE: "User id is not passed in the request",
+    FAILED_MESSAGE: 'Unable to delete given user',
+    EXCEPTION_CODE: 'USER_DEL',
+    INFO: 'Delete User'
+  }
+}
+
